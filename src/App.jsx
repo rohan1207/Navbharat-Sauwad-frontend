@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Navigation from './components/Navigation';
 import Footer from './components/Footer';
+import MobileMessage from './components/MobileMessage';
 import Home from './pages/Home';
 import CategoryPage from './pages/CategoryPage';
 import NewsDetail from './pages/NewsDetail';
@@ -18,6 +19,7 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen flex flex-col">
+        <MobileMessage />
         <Header />
         <Navigation />
         <main className="flex-grow">
