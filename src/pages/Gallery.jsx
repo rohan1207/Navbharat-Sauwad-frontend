@@ -27,10 +27,13 @@ const Gallery = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <section className="bg-white text-black text-center py-8">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold">गॅलरी</h1>
+    <div className="min-h-screen bg-subtleGray">
+      <section className="bg-cleanWhite text-deepCharcoal py-6 border-b border-subtleGray">
+        <div className="container mx-auto px-4 flex items-center justify-between">
+          <h1 className="text-3xl md:text-4xl font-bold">गॅलरी</h1>
+          <span className="hidden sm:inline text-xs text-metaGray uppercase tracking-wide">
+            Photos & Moments
+          </span>
         </div>
       </section>
 
@@ -43,8 +46,8 @@ const Gallery = () => {
               onClick={() => setSelectedCategory(cat.id)}
               className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
                 selectedCategory === cat.id
-                  ? 'bg-gradient-to-r from-red-600 via-orange-500 to-yellow-500 text-white'
-                  : 'bg-white text-gray-700 hover:bg-orange-50 border border-gray-200'
+                  ? 'bg-gradient-to-r from-newsRed to-editorialBlue text-cleanWhite'
+                  : 'bg-cleanWhite text-slateBody hover:bg-subtleGray border border-subtleGray'
               }`}
             >
               {cat.name}
@@ -58,7 +61,7 @@ const Gallery = () => {
             <div
               key={image.id}
               onClick={() => setSelectedImage(image)}
-              className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-xl transition-shadow"
+              className="bg-cleanWhite rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-xl transition-shadow"
             >
               <img
                 src={image.image}
@@ -66,8 +69,8 @@ const Gallery = () => {
                 className="w-full h-64 object-cover"
               />
               <div className="p-4">
-                <h3 className="font-semibold text-gray-800 mb-1">{image.title}</h3>
-                <p className="text-sm text-gray-600">{image.date}</p>
+                <h3 className="font-semibold text-deepCharcoal mb-1">{image.title}</h3>
+                <p className="text-sm text-slateBody">{image.date}</p>
               </div>
             </div>
           ))}
@@ -86,11 +89,11 @@ const Gallery = () => {
               alt={selectedImage.title}
               className="w-full rounded-lg"
             />
-            <div className="bg-white p-4 mt-4 rounded-lg">
-              <h3 className="text-xl font-bold text-gray-800 mb-2">
+            <div className="bg-cleanWhite p-4 mt-4 rounded-lg">
+              <h3 className="text-xl font-bold text-deepCharcoal mb-2">
                 {selectedImage.title}
               </h3>
-              <p className="text-gray-600">{selectedImage.date}</p>
+              <p className="text-slateBody">{selectedImage.date}</p>
             </div>
           </div>
         </div>

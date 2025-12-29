@@ -53,7 +53,7 @@ const EPaperPage = ({ page, onNewsClick }) => {
           alt={`Page ${page.pageNo}`}
           className="w-full rounded-lg shadow-md"
         />
-        {/* Clickable news areas */}
+        {/* Clickable news areas - Invisible but clickable */}
         {page.news && page.news.map((newsItem) => {
           const coords = getDisplayCoords(newsItem);
           if (!coords) return null;
@@ -62,19 +62,17 @@ const EPaperPage = ({ page, onNewsClick }) => {
             <div
               key={newsItem.id}
               onClick={() => onNewsClick(newsItem)}
-              className="absolute border-2 border-orange-500 bg-orange-500 bg-opacity-20 cursor-pointer hover:bg-opacity-40 hover:border-orange-600 transition-all rounded"
+              className="absolute cursor-pointer hover:bg-black hover:bg-opacity-5 transition-all"
               style={{
                 left: `${coords.left}px`,
                 top: `${coords.top}px`,
                 width: `${coords.width}px`,
                 height: `${coords.height}px`,
+                border: 'none',
+                background: 'transparent'
               }}
-              title={newsItem.title}
-            >
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-r from-red-600 via-orange-500 to-yellow-500 text-white text-xs p-1 opacity-0 hover:opacity-100 transition-opacity rounded-b">
-                {newsItem.title}
-              </div>
-            </div>
+              title={newsItem.title || 'क्लिक करा'}
+            />
           );
         })}
       </div>
@@ -83,6 +81,7 @@ const EPaperPage = ({ page, onNewsClick }) => {
 };
 
 export default EPaperPage;
+
 
 
 

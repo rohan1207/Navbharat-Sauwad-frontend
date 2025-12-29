@@ -18,9 +18,10 @@ const MobileMessage = () => {
 
   if (!isMobile) return null;
 
+  // Currently unused, but updated to match new palette for future use
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-red-600 via-orange-500 to-yellow-500 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md text-center">
+    <div className="fixed inset-0 bg-gradient-to-br from-newsRed to-editorialBlue z-50 flex items-center justify-center p-4">
+      <div className="bg-cleanWhite rounded-2xl shadow-2xl p-8 max-w-md text-center">
         <div className="mb-6">
           <svg 
             className="w-24 h-24 mx-auto text-orange-500" 
@@ -36,16 +37,16 @@ const MobileMessage = () => {
             />
           </svg>
         </div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">
+        <h2 className="text-3xl font-bold text-deepCharcoal mb-4">
           मोबाइल संस्करण लवकरच येणार आहे
         </h2>
-        <p className="text-lg text-gray-700 mb-6">
+        <p className="text-lg text-slateBody mb-6">
           कृपया लॅपटॉप किंवा डेस्कटॉपवर पहा
         </p>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-slateBody mb-4">
           Mobile version coming soon
         </p>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-metaGray">
           Please view on laptop or desktop
         </p>
       </div>
@@ -54,4 +55,5 @@ const MobileMessage = () => {
 };
 
 export default MobileMessage;
+
 

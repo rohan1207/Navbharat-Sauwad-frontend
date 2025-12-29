@@ -4,10 +4,13 @@ import { FaCalendarAlt, FaMapMarkerAlt } from 'react-icons/fa';
 
 const Events = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <section className="bg-white text-black text-center py-8">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold">आमचे कार्यक्रम</h1>
+    <div className="min-h-screen bg-subtleGray">
+      <section className="bg-cleanWhite text-deepCharcoal py-6 border-b border-subtleGray">
+        <div className="container mx-auto px-4 flex items-center justify-between">
+          <h1 className="text-3xl md:text-4xl font-bold">आमचे कार्यक्रम</h1>
+          <span className="hidden sm:inline text-xs text-metaGray uppercase tracking-wide">
+            Events & Initiatives
+          </span>
         </div>
       </section>
 
@@ -16,7 +19,7 @@ const Events = () => {
           {newsData.events.map((event) => (
             <div
               key={event.id}
-              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300"
+              className="bg-cleanWhite rounded-lg border border-subtleGray/80 overflow-hidden hover:shadow-md transition-shadow duration-300"
             >
               <img
                 src={event.image}
@@ -24,19 +27,19 @@ const Events = () => {
                 className="w-full h-48 object-cover"
               />
               <div className="p-4">
-                <h3 className="text-xl font-bold text-gray-800 mb-3">
+                <h3 className="text-xl font-bold text-deepCharcoal mb-3">
                   {event.title}
                 </h3>
-                <p className="text-sm text-gray-600 mb-4 line-clamp-3">
+                <p className="text-sm text-slateBody mb-4 line-clamp-3">
                   {event.description}
                 </p>
-                <div className="space-y-2 text-sm text-gray-600">
+                <div className="space-y-2 text-sm text-slateBody">
                   <div className="flex items-center space-x-2">
-                    <FaCalendarAlt className="text-red-700" />
+                    <FaCalendarAlt className="text-newsRed" />
                     <span>{event.date}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <FaMapMarkerAlt className="text-red-700" />
+                    <FaMapMarkerAlt className="text-newsRed" />
                     <span>{event.location}</span>
                   </div>
                 </div>

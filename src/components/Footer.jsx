@@ -1,49 +1,61 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaFacebook, FaTwitter, FaInstagram, FaYoutube, FaLinkedin, FaPhone, FaEnvelope, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaFacebook, FaTwitter, FaInstagram, FaYoutube, FaLinkedin, FaEnvelope, FaMapMarkerAlt } from 'react-icons/fa';
 
 const Footer = () => {
   return (
-    <footer className="bg-white border-t border-gray-200 mt-12">
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+    <footer className="bg-cleanWhite border-t-2 border-subtleGray mt-12">
+      <div className="container mx-auto px-4 py-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* About Section */}
           <div>
-            <img 
-              src="/logo.png" 
-              alt="नवभारत संवाद" 
-              className="h-16 w-auto mb-4"
-            />
-            <p className="text-gray-600 text-sm mb-2">
+            <Link to="/" className="inline-block mb-4">
+              <img 
+                src="/logo1.png" 
+                alt="NAV MANCH" 
+                className="h-16 w-auto"
+              />
+            </Link>
+            <p className="text-slateBody text-sm mb-4 leading-relaxed">
               महाराष्ट्रातील अग्रगण्य मराठी वृत्तपत्र. सत्य, निष्पक्ष आणि वस्तुनिष्ठ बातम्या.
             </p>
-            <p className="text-sm text-orange-600 italic font-semibold">
-              एक संवाद भारताच्या विकासासाठी
-            </p>
+            <div className="space-y-2 text-sm">
+              <p className="text-deepCharcoal">
+                <span className="font-semibold">PRGI Reg No:</span> MHMAR/25/A4153
+              </p>
+              <p className="text-deepCharcoal">
+                <span className="font-semibold">मुख्य संपादक:</span> शिवानी रोहन सुरवसे पाटील
+              </p>
+            </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-xl font-bold mb-4 text-blue-900">द्रुत लिंक</h3>
+            <h3 className="text-lg font-bold mb-4 text-deepCharcoal">द्रुत लिंक</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/" className="text-gray-600 hover:text-orange-600 transition-colors">
+                <Link to="/" className="text-slateBody hover:text-newsRed transition-colors">
                   मुखपृष्ठ
                 </Link>
               </li>
               <li>
-                <Link to="/epaper" className="text-gray-600 hover:text-orange-600 transition-colors">
+                <Link to="/epaper" className="text-slateBody hover:text-newsRed transition-colors">
                   ई-पेपर
                 </Link>
               </li>
               <li>
-                <Link to="/gallery" className="text-gray-600 hover:text-orange-600 transition-colors">
+                <Link to="/gallery" className="text-slateBody hover:text-newsRed transition-colors">
                   गॅलरी
                 </Link>
               </li>
               <li>
-                <Link to="/blogs" className="text-gray-600 hover:text-orange-600 transition-colors">
-                  ब्लॉग
+                <Link to="/articles" className="text-slateBody hover:text-newsRed transition-colors">
+                  लेख
+                </Link>
+              </li>
+              <li>
+                <Link to="/events" className="text-slateBody hover:text-newsRed transition-colors">
+                  कार्यक्रम
                 </Link>
               </li>
             </ul>
@@ -51,36 +63,39 @@ const Footer = () => {
 
           {/* Contact Information */}
           <div>
-            <h3 className="text-xl font-bold mb-4 text-blue-900">संपर्क</h3>
+            <h3 className="text-lg font-bold mb-4 text-deepCharcoal">संपर्क</h3>
             <ul className="space-y-3 text-sm">
-              <li className="flex items-start space-x-2">
-                <FaMapMarkerAlt className="mt-1 text-orange-600" />
-                <span className="text-gray-600">
-                  नवभारत संवाद,<br />
-                  मुख्य कार्यालय,<br />
-                  मुंबई, महाराष्ट्र - 400001
+              <li className="flex items-start gap-3">
+                <FaMapMarkerAlt className="mt-1 text-newsRed flex-shrink-0" />
+                <span className="text-slateBody leading-relaxed">
+                  फ्लॅट नं. ३०३, डी विंग,<br />
+                  अमारा क्वाड्रियम रेसिडेन्सी,<br />
+                  न्याती इटर्निटीजवळ,<br />
+                  पुणेकर नगर, उंदरी,<br />
+                  पुणे, महाराष्ट्र - ४११०६०
                 </span>
               </li>
-              <li className="flex items-center space-x-2">
-                <FaPhone className="text-orange-600" />
-                <span className="text-gray-600">+91 22 1234 5678</span>
-              </li>
-              <li className="flex items-center space-x-2">
-                <FaEnvelope className="text-orange-600" />
-                <span className="text-gray-600">info@navbharatsamvad.com</span>
+              <li className="flex items-center gap-3">
+                <FaEnvelope className="text-newsRed flex-shrink-0" />
+                <a 
+                  href="mailto:navmanch25@gmail.com" 
+                  className="text-slateBody hover:text-newsRed transition-colors"
+                >
+                  navmanch25@gmail.com
+                </a>
               </li>
             </ul>
           </div>
 
-          {/* Social Media & RNI */}
+          {/* Social Media */}
           <div>
-            <h3 className="text-xl font-bold mb-4 text-blue-900">सोशल मीडिया</h3>
-            <div className="flex space-x-4 mb-4">
+            <h3 className="text-lg font-bold mb-4 text-deepCharcoal">सोशल मीडिया</h3>
+            <div className="flex gap-4 mb-6">
               <a
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-600 hover:text-blue-600 transition-colors"
+                className="text-slateBody hover:text-newsRed transition-colors"
                 aria-label="Facebook"
               >
                 <FaFacebook className="w-6 h-6" />
@@ -89,7 +104,7 @@ const Footer = () => {
                 href="https://twitter.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-600 hover:text-blue-500 transition-colors"
+                className="text-slateBody hover:text-newsRed transition-colors"
                 aria-label="Twitter"
               >
                 <FaTwitter className="w-6 h-6" />
@@ -98,7 +113,7 @@ const Footer = () => {
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-600 hover:text-pink-600 transition-colors"
+                className="text-slateBody hover:text-newsRed transition-colors"
                 aria-label="Instagram"
               >
                 <FaInstagram className="w-6 h-6" />
@@ -107,7 +122,7 @@ const Footer = () => {
                 href="https://youtube.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-600 hover:text-red-600 transition-colors"
+                className="text-slateBody hover:text-newsRed transition-colors"
                 aria-label="YouTube"
               >
                 <FaYoutube className="w-6 h-6" />
@@ -116,23 +131,35 @@ const Footer = () => {
                 href="https://linkedin.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-600 hover:text-blue-700 transition-colors"
+                className="text-slateBody hover:text-newsRed transition-colors"
                 aria-label="LinkedIn"
               >
                 <FaLinkedin className="w-6 h-6" />
               </a>
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
-                <strong className="text-blue-900">RNI नंबर:</strong> MAHENG/2024/12345
-              </p>
-            </div>
+          </div>
+        </div>
+
+        {/* Disclaimer */}
+        <div className="mb-8 pt-6 border-t border-subtleGray">
+          <div className="bg-subtleGray/50 rounded-lg p-6">
+            <h4 className="text-sm font-bold text-deepCharcoal mb-3">सूचना:</h4>
+            <p className="text-xs text-slateBody leading-relaxed">
+              या पोर्टलवर प्रकाशित होणाऱ्या सर्व बातम्या, लेख, विश्लेषण, मतलेख आणि इतर सामग्री ही संबंधित लेखक, संवाददाता किंवा योगदानकर्त्यांची वैयक्तिक मते, विचार आणि निष्कर्ष दर्शविते. जरी आवश्यकतेनुसार संपादकीय दुरुस्त्या केल्या जाऊ शकतात, तरी या पोर्टलचे संपादक, व्यवस्थापन किंवा संस्था या सामग्रीशी संपूर्णपणे सहमत असतीलच असे नाही.
+            </p>
           </div>
         </div>
 
         {/* Copyright */}
-        <div className="mt-8 pt-6 border-t border-gray-200 text-center text-sm text-gray-600">
-          <p>&copy; {new Date().getFullYear()} नवभारत संवाद. सर्व हक्क सुरक्षित.</p> <p>Designed and developed by TheSocialKollab</p>
+        <div className="pt-6 border-t-2 border-subtleGray">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slateBody">
+            <p className="text-center md:text-left">
+              कॉपीराइट ©️ २०२५ <span className="font-bold text-newsRed">NAV MANCH</span>. सर्व हक्क सुरक्षित.
+            </p>
+            <p className="text-xs text-metaGray">
+              Designed and developed by TheSocialKollab
+            </p>
+          </div>
         </div>
       </div>
     </footer>
@@ -140,4 +167,3 @@ const Footer = () => {
 };
 
 export default Footer;
-

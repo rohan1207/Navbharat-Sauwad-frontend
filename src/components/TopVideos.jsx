@@ -60,13 +60,13 @@ const TopVideos = () => {
   };
 
   return (
-    <section className="bg-white py-8 border-t border-b border-gray-200 my-8">
+    <section className="bg-cleanWhite py-8 border-t border-b border-subtleGray my-8">
       {/* Section Header */}
       <div className="flex items-center mb-6">
-        <div className="bg-gradient-to-r from-red-600 via-orange-500 to-yellow-500 text-white px-3 py-1 rounded mr-3 font-bold text-sm">
+        <div className="bg-gradient-to-r from-newsRed to-editorialBlue text-cleanWhite px-3 py-1 rounded mr-3 font-bold text-sm">
           NS
         </div>
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+        <h2 className="text-2xl md:text-3xl font-bold text-deepCharcoal">
           शीर्ष व्हिडिओ
         </h2>
       </div>
@@ -108,10 +108,10 @@ const TopVideos = () => {
                 </div>
               )}
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mt-4 line-clamp-2">
+            <h3 className="text-lg font-bold text-deepCharcoal mt-4 line-clamp-2">
               {selectedVideo.title}
             </h3>
-            <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
+            <div className="flex items-center space-x-4 text-sm text-slateBody mt-2">
               <span>{selectedVideo.views} दृश्ये</span>
               <span>•</span>
               <span>{selectedVideo.date}</span>
@@ -127,12 +127,12 @@ const TopVideos = () => {
                   onClick={() => handleVideoSelect(video)}
                   className={`flex space-x-3 cursor-pointer group p-2 rounded transition-colors ${
                     selectedVideo.id === video.id
-                      ? 'bg-orange-50 border-l-4 border-orange-600'
-                      : 'hover:bg-gray-50'
+                      ? 'bg-newsRed/5 border-l-4 border-newsRed'
+                      : 'hover:bg-subtleGray'
                   }`}
                 >
                   {/* Thumbnail */}
-                  <div className="relative flex-shrink-0 w-32 h-20 bg-gray-200 rounded overflow-hidden">
+                  <div className="relative flex-shrink-0 w-32 h-20 bg-subtleGray rounded overflow-hidden">
                     <img
                       src={video.thumbnail}
                       alt={video.title}
@@ -145,12 +145,12 @@ const TopVideos = () => {
                       </div>
                     </div>
                     {/* Duration Badge */}
-                    <div className="absolute bottom-1 right-1 bg-black bg-opacity-70 text-white text-xs px-1 rounded">
+                    <div className="absolute bottom-1 right-1 bg-black bg-opacity-70 text-cleanWhite text-xs px-1 rounded">
                       {video.duration}
                     </div>
                     {/* NS Badge */}
                     <div className="absolute top-1 left-1">
-                      <span className="bg-gradient-to-r from-red-600 via-orange-500 to-yellow-500 text-white text-xs px-1 py-0.5 rounded font-bold">
+                      <span className="bg-gradient-to-r from-newsRed to-editorialBlue text-cleanWhite text-xs px-1 py-0.5 rounded font-bold">
                         NS
                       </span>
                     </div>
@@ -160,12 +160,12 @@ const TopVideos = () => {
                   <div className="flex-1 min-w-0">
                     <h4 className={`text-sm font-semibold line-clamp-2 mb-1 ${
                       selectedVideo.id === video.id
-                        ? 'text-orange-600'
-                        : 'text-gray-900 group-hover:text-orange-600'
+                        ? 'text-newsRed'
+                        : 'text-deepCharcoal group-hover:text-newsRed'
                     } transition-colors`}>
                       {video.title}
                     </h4>
-                    <div className="flex items-center space-x-2 text-xs text-gray-500">
+                    <div className="flex items-center space-x-2 text-xs text-metaGray">
                       <span>{video.views}</span>
                       <span>•</span>
                       <span>{video.date}</span>
