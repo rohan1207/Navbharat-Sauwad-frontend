@@ -1,8 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { FaBars, FaTimes, FaSearch, FaChevronDown } from 'react-icons/fa';
+import { useHeader } from '../context/HeaderContext';
 
 const Navigation = () => {
+  const { isHeaderVisible, headerHeight } = useHeader();
+  const breakingNewsHeight = 56; // Fixed height of breaking news ticker
+  
+  // Calculate top position with smooth transition
+  // When header is visible: headerHeight + breakingNewsHeight
+  // When header is hidden: just breaking news height
+  const topPosition = isHeaderVisible 
+    ? (headerHeight || 0) + breakingNewsHeight 
+    : breakingNewsHeight;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -79,7 +89,15 @@ const Navigation = () => {
 
   return (
     <>
-      <nav className="bg-white border-b border-gray-100 fixed top-[134px] md:top-[112px] left-0 right-0 z-40 shadow-sm">
+      <nav 
+        className="bg-white border-b border-gray-100 fixed left-0 right-0 z-40 shadow-sm will-change-transform"
+        style={{ 
+          top: `${topPosition}px`,
+          transition: 'top 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden'
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Navigation Bar */}
           <div className="flex items-center justify-between py-3 min-h-[60px]">
@@ -128,6 +146,13 @@ const Navigation = () => {
                       ? 'text-gray-900'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
+                  style={{ 
+                    fontFamily: "'Mukta', 'Noto Sans Devanagari', 'Tiro Devanagari Hindi', 'Hind', system-ui, sans-serif",
+                    fontFeatureSettings: '"liga" 1, "kern" 1',
+                    textRendering: 'optimizeLegibility',
+                    WebkitFontSmoothing: 'antialiased',
+                    MozOsxFontSmoothing: 'grayscale'
+                  }}
                 >
                   <span className="relative z-10">{cat.name}</span>
                   {isActive(cat.path) && (

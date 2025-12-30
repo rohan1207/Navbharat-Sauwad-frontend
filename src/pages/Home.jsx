@@ -3,7 +3,82 @@ import { Link } from 'react-router-dom';
 import { FaPlay, FaArrowRight } from 'react-icons/fa';
 import newsData from '../data/newsData.json';
 import Sidebar from '../components/Sidebar';
-import { getFeaturedArticles, getLatestArticles, getCategories, getArticlesByCategory, getShorts } from '../utils/api';
+import PhotoOfTheDay from '../components/PhotoOfTheDay';
+import { getFeaturedArticles, getLatestArticles, getCategories, getArticlesByCategory, getShorts, apiFetch } from '../utils/api';
+
+// Helper to strip HTML tags and get plain text from content/summary
+const getArticlePlainText = (article) => {
+  const source = article?.content || article?.summary || '';
+  if (!source) return '';
+  return source.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+};
+
+// Horizontal Image Ads Component
+const HorizontalImageAds = () => {
+  const [ads, setAds] = useState([]);
+
+  useEffect(() => {
+    const fetchAds = async () => {
+      try {
+        const data = await apiFetch('/ads/active/horizontal-image');
+        if (data && data.length > 0) {
+          setAds(data);
+          // Track impressions
+          data.forEach(ad => {
+            if (ad._id) {
+              apiFetch(`/ads/${ad._id}/impression`, { method: 'POST' }).catch(console.error);
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching horizontal image ads:', error);
+      }
+    };
+    fetchAds();
+  }, []);
+
+  const handleAdClick = async (adId, link) => {
+    if (adId) {
+      try {
+        await apiFetch(`/ads/${adId}/click`, { method: 'POST' });
+      } catch (error) {
+        console.error('Error tracking click:', error);
+      }
+    }
+    if (link) {
+      window.open(link, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  if (ads.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="mb-10">
+      {ads.map((ad) => (
+        <div 
+          key={ad._id} 
+          className="bg-cleanWhite rounded-lg overflow-hidden shadow-sm border border-subtleGray/70 cursor-pointer hover:shadow-md transition-all duration-300 group mb-4"
+          onClick={() => handleAdClick(ad._id, ad.link)}
+        >
+          <div className="relative w-full bg-gray-100 flex items-center justify-center">
+            <img
+              src={ad.imageUrl}
+              alt={ad.title || 'जाहिरात'}
+              className="w-full h-auto max-h-[300px] md:max-h-[400px] object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+            />
+            <div className="absolute top-2 left-2 z-10">
+              <span className="text-[10px] text-cleanWhite/80 font-semibold uppercase tracking-wide bg-black/50 px-2 py-1 rounded">
+                जाहिरात
+              </span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </section>
+  );
+};
 
 const Home = () => {
   const [featuredNews, setFeaturedNews] = useState(null);
@@ -11,6 +86,7 @@ const Home = () => {
   const [allCategories, setAllCategories] = useState([]);
   const [categories, setCategories] = useState([]);
   const [shorts, setShorts] = useState([]);
+  const [horizontalAds, setHorizontalAds] = useState([]);
   const [popularArticles, setPopularArticles] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,26 +110,52 @@ const Home = () => {
       try {
         setLoading(true);
         
-        // Load featured and latest articles
-        const [featured, latest, cats, shortsData] = await Promise.all([
+        // Load critical data first (featured + latest) - these show immediately
+        const criticalCalls = Promise.allSettled([
           getFeaturedArticles(),
-          getLatestArticles(6),
+          getLatestArticles(6)
+        ]);
+        
+        // Load secondary data in parallel (categories, shorts) - these can load slightly later
+        const secondaryCalls = Promise.allSettled([
           getCategories(),
           getShorts()
         ]);
+        
+        // Start both in parallel but prioritize critical
+        const [featuredResult, latestResult] = await criticalCalls;
+        const [catsResult, shortsResult] = await secondaryCalls;
+        
+        // Extract successful results
+        const featured = featuredResult.status === 'fulfilled' ? featuredResult.value : null;
+        const latest = latestResult.status === 'fulfilled' ? latestResult.value : null;
+        const cats = catsResult.status === 'fulfilled' ? catsResult.value : null;
+        const shortsData = shortsResult.status === 'fulfilled' ? shortsResult.value : null;
 
-        // Set featured news
+        // Set featured news immediately - only use API data if available
         if (featured && featured.length > 0) {
           setFeaturedNews(featured[0]);
+          if (latest && latest.length > 1) {
+            setOtherNews(latest.slice(1, 6));
+          }
+          // Show content immediately, don't wait for everything
+          setLoading(false);
+        } else if (latest && latest.length > 0) {
+          // Use latest as featured if featured failed
+          setFeaturedNews(latest[0]);
           setOtherNews(latest.slice(1, 6));
+          // Show content immediately
+          setLoading(false);
         } else {
-          // Fallback to JSON
+          // Only use fallback if API completely failed
+          console.warn('API failed, using fallback data');
           const fallbackFeatured = newsData.latestNews[0];
           setFeaturedNews(fallbackFeatured);
           setOtherNews(newsData.latestNews.slice(1, 6));
+          setLoading(false);
         }
 
-        // Set categories
+        // Set categories - only use API data if available
         if (cats && cats.length > 0) {
           setAllCategories(cats);
           // Filter categories to match Navigation menu
@@ -93,7 +195,8 @@ const Home = () => {
             .filter(cat => cat !== undefined);
           setCategories(filteredCats);
         } else {
-          // Fallback to JSON
+          // Only use fallback if API completely failed
+          console.warn('Categories API failed, using fallback');
           setAllCategories(newsData.categories);
           const filteredCats = primaryCategoryIds
             .map(id => newsData.categories.find(cat => cat.id === id))
@@ -108,26 +211,65 @@ const Home = () => {
           setShorts(newsData.shorts || []);
         }
 
-        // Load category articles for popular
-        const allArticles = [...latest];
+        // Fetch horizontal video ads in background (non-blocking)
+        apiFetch('/ads/active/horizontal-video', { useCache: true, cacheTTL: 5 * 60 * 1000 })
+          .then(adsData => {
+            if (adsData && adsData.length > 0) {
+              setHorizontalAds(adsData);
+              // Track impressions in background
+              adsData.forEach(ad => {
+                if (ad._id) {
+                  apiFetch(`/ads/${ad._id}/impression`, { method: 'POST', useCache: false }).catch(console.error);
+                }
+              });
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching horizontal ads:', error);
+          });
+
+        // Load category articles for popular - PARALLELIZED and optimized
+        // Use cached data from latest if available, load categories in background
+        const allArticles = [...(latest || [])];
+        
+        // Load popular articles in background (non-blocking)
         if (cats && cats.length > 0) {
-          for (const cat of cats.slice(0, 5)) {
-            const catId = cat.id || cat._id;
-            const catArticles = await getArticlesByCategory(catId);
-            allArticles.push(...catArticles.slice(0, 2));
-          }
+          // Only load top 3 categories for popular section to reduce API calls
+          Promise.allSettled(
+            cats.slice(0, 3).map(async (cat) => {
+              try {
+                const catId = cat.id || cat._id;
+                const catArticles = await getArticlesByCategory(catId);
+                return catArticles.slice(0, 2);
+              } catch (error) {
+                console.warn(`Failed to load articles for category ${cat.id}:`, error);
+                return [];
+              }
+            })
+          ).then(categoryResults => {
+            const articles = [];
+            categoryResults.forEach(result => {
+              if (result.status === 'fulfilled' && result.value) {
+                articles.push(...result.value);
+              }
+            });
+            setPopularArticles([...allArticles, ...articles].slice(0, 10));
+          });
         } else {
           // Fallback
-          newsData.categories.forEach(cat => {
+          const fallbackArticles = [];
+          newsData.categories.slice(0, 3).forEach(cat => {
             if (cat.news) {
-              allArticles.push(...cat.news.slice(0, 2));
+              fallbackArticles.push(...cat.news.slice(0, 2));
             }
           });
+          setPopularArticles([...allArticles, ...fallbackArticles].slice(0, 10));
         }
-        setPopularArticles(allArticles.slice(0, 10));
 
       } catch (error) {
         console.error('Error loading data:', error);
+        // Even on error, try to show something
+        setLoading(false);
         // Fallback to JSON
         const fallbackFeatured = newsData.latestNews[0];
         setFeaturedNews(fallbackFeatured);
@@ -147,42 +289,65 @@ const Home = () => {
     loadData();
   }, []);
 
-  // Load category articles when categories change
+  // Load category articles when categories change - OPTIMIZED
   useEffect(() => {
     const loadCategoryArticles = async () => {
-      if (categories.length === 0) return;
+      if (categories.length === 0 || !allCategories.length) return;
       
-      const updatedCategories = await Promise.all(
-        categories.map(async (cat) => {
-          // Use the actual MongoDB _id for API calls
-          const catId = cat._id || cat.id;
-          const articles = await getArticlesByCategory(catId);
-          
-          // If no articles from API, use fallback
-          if (!articles || articles.length === 0) {
-            // Try to match by name or the string ID for fallback
-            const fallbackCat = newsData.categories.find(c => 
-              c.id === catId || 
-              c.id === (cat.id || cat.nameEn?.toLowerCase().replace(/\s+/g, '-'))
-            );
-            return {
-              ...cat,
-              news: fallbackCat?.news || []
-            };
-          }
-          
-          return {
-            ...cat,
-            news: articles
-          };
-        })
-      );
+      // Only load if categories don't already have news
+      const needsLoading = categories.some(cat => !cat.news || cat.news.length === 0);
+      if (!needsLoading) return;
       
-      setCategories(updatedCategories);
+      try {
+        const updatedCategories = await Promise.all(
+          categories.map(async (cat) => {
+            // Skip if already has news
+            if (cat.news && cat.news.length > 0) return cat;
+            
+            try {
+              // Use the actual MongoDB _id for API calls
+              const catId = cat._id || cat.id;
+              const articles = await getArticlesByCategory(catId);
+              
+              // If no articles from API, use fallback
+              if (!articles || articles.length === 0) {
+                // Try to match by name or the string ID for fallback
+                const fallbackCat = newsData.categories.find(c => 
+                  c.id === catId || 
+                  c.id === (cat.id || cat.nameEn?.toLowerCase().replace(/\s+/g, '-'))
+                );
+                return {
+                  ...cat,
+                  news: fallbackCat?.news || []
+                };
+              }
+              
+              return {
+                ...cat,
+                news: articles
+              };
+            } catch (error) {
+              console.warn(`Error loading articles for category ${cat.id}:`, error);
+              // Return category with fallback data
+              const fallbackCat = newsData.categories.find(c => 
+                c.id === (cat.id || cat.nameEn?.toLowerCase().replace(/\s+/g, '-'))
+              );
+              return {
+                ...cat,
+                news: fallbackCat?.news || []
+              };
+            }
+          })
+        );
+        
+        setCategories(updatedCategories);
+      } catch (error) {
+        console.error('Error loading category articles:', error);
+      }
     };
 
     loadCategoryArticles();
-  }, [allCategories.length, primaryCategoryIds]);
+  }, [allCategories.length]); // Removed primaryCategoryIds dependency to avoid unnecessary reloads
 
   if (loading) {
     return (
@@ -196,7 +361,7 @@ const Home = () => {
     <div className="min-h-screen bg-subtleGray">
       {/* Main Content Area */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-x-6 gap-y-6">
           {/* Left Sidebar */}
           <div className="lg:col-span-2 order-2 lg:order-1">
             <Sidebar type="left" />
@@ -228,13 +393,8 @@ const Home = () => {
                       <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-cleanWhite mb-4 leading-tight group-hover:text-newsRed/90 transition-colors">
                         {featuredNews.title}
                       </h1>
-                      {featuredNews.subtitle && (
-                        <p className="text-lg md:text-xl text-cleanWhite/80 mb-3 font-medium">
-                          {featuredNews.subtitle}
-                        </p>
-                      )}
                       <p className="text-base md:text-lg text-cleanWhite/90 line-clamp-2 mb-3">
-                        {featuredNews.summary}
+                        {getArticlePlainText(featuredNews)}
                       </p>
                       <div className="flex items-center gap-4 text-sm text-cleanWhite/80">
                         <span>{featuredNews.author?.name || featuredNews.author}</span>
@@ -250,6 +410,9 @@ const Home = () => {
                 </Link>
               </article>
             )}
+
+            {/* Photo of the Day */}
+            <PhotoOfTheDay />
 
             {/* Top Stories Grid - 2 Cards in first row, 3 cards in second row */}
             <section className="mb-10">
@@ -298,13 +461,8 @@ const Home = () => {
                       <h3 className="text-lg font-bold text-deepCharcoal mb-2 line-clamp-2 group-hover:text-newsRed transition-colors">
                         {news.title}
                       </h3>
-                      {news.subtitle && (
-                        <p className="text-sm text-slateBody/80 mb-2 font-medium line-clamp-1">
-                          {news.subtitle}
-                        </p>
-                      )}
                       <p className="text-sm text-slateBody line-clamp-2 mb-3">
-                        {news.summary}
+                        {getArticlePlainText(news)}
                       </p>
                       <div className="flex items-center gap-3 text-xs text-metaGray">
                         <span>{news.date}</span>
@@ -345,13 +503,8 @@ const Home = () => {
                       <h3 className="text-lg font-bold text-deepCharcoal mb-2 line-clamp-2 group-hover:text-newsRed transition-colors">
                         {news.title}
                       </h3>
-                      {news.subtitle && (
-                        <p className="text-sm text-slateBody/80 mb-2 font-medium line-clamp-1">
-                          {news.subtitle}
-                        </p>
-                      )}
                       <p className="text-sm text-slateBody line-clamp-2 mb-3">
-                        {news.summary}
+                        {getArticlePlainText(news)}
                       </p>
                       <div className="flex items-center gap-3 text-xs text-metaGray">
                         <span>{news.date}</span>
@@ -365,28 +518,50 @@ const Home = () => {
             </section>
 
             {/* Horizontal Video Ad Section */}
-            <section className="mb-10">
-              <div className="bg-cleanWhite rounded-lg overflow-hidden shadow-sm border border-subtleGray/70">
-                <div className="relative w-full aspect-video bg-black min-h-[120px] md:min-h-[160px] lg:min-h-[200px]">
-                  <p className="absolute top-2 left-2 z-10 text-[10px] text-cleanWhite/80 font-semibold uppercase tracking-wide bg-black/50 px-2 py-1 rounded">
-                    व्हिडिओ जाहिरात
-                  </p>
-                  <div className="w-full h-full">
-                    <video
-                      className="w-full h-full object-cover"
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                    >
-                      <source src="https://videos.pexels.com/video-files/3045163/3045163-hd_1920_1080_30fps.mp4" type="video/mp4" />
-                      <source src="https://videos.pexels.com/video-files/3045163/3045163-uhd_2560_1440_30fps.mp4" type="video/mp4" />
-                      Your browser does not support the video tag.
-                    </video>
+            {horizontalAds.length > 0 && (
+              <section className="mb-10">
+                {horizontalAds.map((ad) => (
+                  <div 
+                    key={ad._id} 
+                    className="bg-cleanWhite rounded-lg overflow-hidden shadow-sm mb-4 cursor-pointer hover:opacity-95 transition-opacity"
+                    onClick={() => {
+                      if (ad.link) {
+                        window.open(ad.link, '_blank', 'noopener,noreferrer');
+                      }
+                      if (ad._id) {
+                        apiFetch(`/ads/${ad._id}/click`, { method: 'POST' }).catch(console.error);
+                      }
+                    }}
+                  >
+                    <div className="relative w-full aspect-video bg-black min-h-[120px] md:min-h-[160px] lg:min-h-[200px]">
+                      <p className="absolute top-2 left-2 z-10 text-[10px] text-cleanWhite/80 font-semibold uppercase tracking-wide bg-black/50 px-2 py-1 rounded">
+                        व्हिडिओ जाहिरात
+                      </p>
+                      <div className="w-full h-full">
+                        {ad.videoUrl ? (
+                          <video
+                            className="w-full h-full object-cover"
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                          >
+                            <source src={ad.videoUrl} type="video/mp4" />
+                            Your browser does not support the video tag.
+                          </video>
+                        ) : (
+                          <img
+                            src={ad.imageUrl}
+                            alt={ad.title || 'जाहिरात'}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </section>
+                ))}
+              </section>
+            )}
 
             {/* Short Videos Section */}
             {shorts.length > 0 && (
@@ -408,34 +583,28 @@ const Home = () => {
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
                   {shorts.slice(0, 5).map((short) => (
-                    <Link
-                      key={short.id}
-                      to={`/shorts/${short.id}`}
+                    <div
+                      key={short._id || short.id}
                       className="group relative bg-cleanWhite rounded-lg overflow-hidden shadow-sm border border-subtleGray/70 hover:shadow-md transition-all duration-300"
                     >
                       <div className="relative aspect-[9/16] overflow-hidden bg-black">
-                        <img
-                          src={short.image}
-                          alt={short.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="bg-white/95 rounded-full p-2.5 md:p-3 group-hover:scale-110 transition-transform shadow-lg">
-                            <FaPlay className="w-3 h-3 md:w-4 md:h-4 text-deepCharcoal ml-0.5" />
-                          </div>
-                        </div>
-                        <div className="absolute bottom-0 left-0 right-0 p-2 md:p-3">
-                          <h4 className="text-[10px] md:text-xs font-semibold text-cleanWhite line-clamp-2 group-hover:text-newsRed/90 transition-colors drop-shadow-lg">
-                            {short.title}
-                          </h4>
-                        </div>
+                        <iframe
+                          src={`https://www.youtube.com/embed/${short.videoId || short.id}`}
+                          title="YouTube Short"
+                          className="w-full h-full"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        ></iframe>
                       </div>
-                    </Link>
+                    </div>
                   ))}
                 </div>
               </section>
             )}
+
+            {/* Horizontal Image Ad Section */}
+            <HorizontalImageAds />
 
             {/* Category Sections */}
             {categories.map((category) => (
@@ -480,13 +649,8 @@ const Home = () => {
                           <h3 className="text-xl md:text-2xl font-bold text-deepCharcoal mb-3 line-clamp-3 group-hover:text-newsRed transition-colors">
                             {category.news[0].title}
                           </h3>
-                          {category.news[0].subtitle && (
-                            <p className="text-sm text-slateBody/80 mb-3 font-medium line-clamp-2">
-                              {category.news[0].subtitle}
-                            </p>
-                          )}
                           <p className="text-sm text-slateBody line-clamp-3 mb-4">
-                            {category.news[0].summary}
+                            {getArticlePlainText(category.news[0])}
                           </p>
                           <div className="flex items-center gap-3 text-xs text-metaGray">
                             <span>{new Date(category.news[0].publishedAt || category.news[0].createdAt || category.news[0].date).toLocaleDateString('mr-IN')}</span>
@@ -519,13 +683,8 @@ const Home = () => {
                           <h4 className="text-base font-bold text-deepCharcoal mb-2 line-clamp-2 group-hover:text-newsRed transition-colors">
                             {news.title}
                           </h4>
-                          {news.subtitle && (
-                            <p className="text-xs text-slateBody/80 mb-2 font-medium line-clamp-1">
-                              {news.subtitle}
-                            </p>
-                          )}
                           <p className="text-xs text-slateBody line-clamp-2 mb-2">
-                            {news.summary}
+                            {getArticlePlainText(news)}
                           </p>
                           <p className="text-xs text-metaGray">{new Date(news.publishedAt || news.createdAt || news.date).toLocaleDateString('mr-IN')}</p>
                         </div>

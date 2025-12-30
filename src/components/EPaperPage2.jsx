@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-const EPaperPage2 = ({ page, onSectionClick }) => {
+const EPaperPage2 = ({ page, onSectionClick, epaperId }) => {
+  const navigate = useNavigate();
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const imgRef = useRef(null);
   const containerRef = useRef(null);
@@ -58,10 +60,24 @@ const EPaperPage2 = ({ page, onSectionClick }) => {
           const coords = getDisplayCoords(newsItem);
           if (!coords) return null;
           
+          const handleClick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (epaperId) {
+              // Navigate to section page - ensure ID is string
+              const sectionId = newsItem.id !== undefined ? String(newsItem.id) : newsItem._id;
+              const epId = String(epaperId);
+              navigate(`/epaper/${epId}/page/${page.pageNo}/section/${sectionId}`);
+            } else if (onSectionClick) {
+              // Fallback to callback if no epaperId
+              onSectionClick(newsItem);
+            }
+          };
+
           return (
             <div
               key={newsItem.id}
-              onClick={() => onSectionClick(newsItem)}
+              onClick={handleClick}
               className="absolute cursor-pointer hover:bg-black hover:bg-opacity-5 transition-all"
               style={{
                 left: `${coords.left}px`,

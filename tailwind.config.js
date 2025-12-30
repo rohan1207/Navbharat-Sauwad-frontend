@@ -6,6 +6,20 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: [
+          'Mukta',
+          'Noto Sans Devanagari',
+          'Tiro Devanagari Hindi',
+          'Hind',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'sans-serif'
+        ],
+      },
       colors: {
         // Primary
         deepCharcoal: '#1a1a1a', // Main headlines, body text

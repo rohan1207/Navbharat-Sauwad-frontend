@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import newsData from '../data/newsData.json';
 import Sidebar from '../components/Sidebar';
+import SportsScores from '../components/SportsScores';
 import { getCategories, getArticlesByCategory } from '../utils/api';
 
 const CategoryPage = () => {
@@ -36,6 +37,8 @@ const CategoryPage = () => {
         
         if (foundCategory) {
           setCategory(foundCategory);
+          // Show category immediately, don't wait for articles
+          setLoading(false);
           
           // Get articles for this category - use _id if available, otherwise id
           const catId = foundCategory._id || foundCategory.id;
@@ -124,7 +127,7 @@ const CategoryPage = () => {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-x-6 gap-y-6">
           {/* Left Sidebar - after main on mobile */}
           <div className="lg:col-span-2 order-2 lg:order-1">
             <Sidebar type="left" />
@@ -132,6 +135,13 @@ const CategoryPage = () => {
 
           {/* Main Content */}
           <div className="lg:col-span-8 order-1 lg:order-2">
+            {/* Sports Scores Section - Only for sports category */}
+            {(categoryId === 'sports' || category?.nameEn?.toLowerCase() === 'sports' || category?.name === 'क्रीडा') && (
+              <div className="mb-8">
+                <SportsScores />
+              </div>
+            )}
+
             {/* Featured Story */}
             {featuredNews && (
               <article className="mb-8 pb-6 border-b border-subtleGray">
@@ -184,13 +194,8 @@ const CategoryPage = () => {
                       <h3 className="text-lg font-bold text-deepCharcoal mb-2 line-clamp-2 group-hover:text-newsRed transition-colors">
                         {news.title}
                       </h3>
-                      {news.subtitle && (
-                        <p className="text-sm text-slateBody/80 mb-2 font-medium line-clamp-1">
-                          {news.subtitle}
-                        </p>
-                      )}
                       <p className="text-sm text-slateBody line-clamp-3 mb-2">
-                        {news.summary}
+                        {(news.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}
                       </p>
                       <div className="flex items-center space-x-4 text-xs text-metaGray">
                         <span>{new Date(news.publishedAt || news.createdAt || news.date).toLocaleDateString('mr-IN')}</span>

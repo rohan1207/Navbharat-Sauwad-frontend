@@ -169,7 +169,7 @@ const EPaper = () => {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-x-6 gap-y-6">
           {/* Left Sidebar - after main on mobile */}
           <div className="lg:col-span-2 order-2 lg:order-1">
             <Sidebar type="left" />
@@ -262,23 +262,23 @@ const EPaper = () => {
 
       {/* News Detail Modal */}
       {selectedNews && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-cleanWhite rounded-lg shadow-xl max-w-5xl w-full max-h-[95vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4 pb-3 border-b border-subtleGray sticky top-0 bg-cleanWhite z-10">
-              <h2 className="text-xl font-bold text-deepCharcoal">
-                {selectedNews.news.title || 'Untitled'}
-              </h2>
-              <button
-                onClick={closeNewsModal}
-                className="text-metaGray hover:text-deepCharcoal text-2xl font-bold"
-              >
-                ✕
-              </button>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeNewsModal}>
+          <div 
+            className="bg-cleanWhite max-w-6xl w-full max-h-[95vh] overflow-y-auto relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Logo - No border, no shadow, seamless */}
+            <div className="flex items-center justify-center py-4 bg-gradient-to-b from-cleanWhite to-subtleGray/10">
+              <img
+                src="/logo1.png"
+                alt="नव मंच"
+                className="h-16 md:h-20 w-auto"
+              />
             </div>
             
-            {/* Cropped Image - The Main Content */}
+            {/* Cropped Image - The Main Content - Seamless with logo */}
             {selectedNews.croppedImageUrl && (
-              <div className="mb-4 border border-subtleGray rounded-lg overflow-hidden bg-gray-50">
+              <div className="overflow-hidden bg-cleanWhite">
                 <img
                   src={selectedNews.croppedImageUrl}
                   alt={selectedNews.news.title || 'बातमी विभाग'}
@@ -289,42 +289,64 @@ const EPaper = () => {
                   }}
                   onError={(e) => {
                     console.error('Error loading cropped image:', selectedNews.croppedImageUrl);
-                    // Fallback to full page image if crop fails
                     e.target.src = selectedNews.page.image;
                   }}
                 />
               </div>
             )}
             
-            {/* Metadata */}
-            <div className="space-y-2 text-sm text-metaGray mb-4 border-t border-subtleGray pt-4">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-deepCharcoal">📄 पृष्ठ:</span>
-                <span>{selectedNews.page.pageNo}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-deepCharcoal">📰 वृत्तपत्र:</span>
-                <span>{selectedNews.epaper.title}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-deepCharcoal">📅 तारीख:</span>
-                <span>{new Date(selectedNews.epaper.date).toLocaleDateString('mr-IN', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}</span>
-              </div>
-            </div>
-            
-            {/* Content (if available) */}
+            {/* Content (if available) - Before Footer */}
             {selectedNews.news.content && (
-              <div className="border-t border-subtleGray pt-4">
+              <div className="px-4 py-6 border-t border-subtleGray/30">
                 <div 
                   className="text-slateBody leading-relaxed article-content"
                   dangerouslySetInnerHTML={{ __html: selectedNews.news.content || '' }}
                 />
               </div>
             )}
+            
+            {/* Footer Section - Clean and Elegant */}
+            <div className="bg-gradient-to-b from-subtleGray/10 to-cleanWhite pt-4 pb-6">
+              {/* Website URL */}
+              <div className="text-center mb-4">
+                <p className="text-xs md:text-sm text-metaGray font-medium tracking-wide">
+                  navmanch.com/epapers
+                </p>
+              </div>
+              
+              {/* Metadata - Date, E-paper Name, Page Number */}
+              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 px-4 text-xs md:text-sm text-metaGray">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-deepCharcoal">तारीख:</span>
+                  <span>{new Date(selectedNews.epaper.date).toLocaleDateString('mr-IN', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}</span>
+                </div>
+                <div className="hidden md:block w-px h-4 bg-subtleGray"></div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-deepCharcoal">ई-पेपर:</span>
+                  <span className="max-w-[200px] truncate">{selectedNews.epaper.title}</span>
+                </div>
+                <div className="hidden md:block w-px h-4 bg-subtleGray"></div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-deepCharcoal">पृष्ठ:</span>
+                  <span>{selectedNews.page.pageNo}</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Close Button - Floating */}
+            <button
+              onClick={closeNewsModal}
+              className="absolute top-4 right-4 w-8 h-8 md:w-10 md:h-10 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-all duration-200 backdrop-blur-sm shadow-lg"
+              aria-label="Close"
+            >
+              <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </div>
       )}

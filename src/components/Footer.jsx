@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaFacebook, FaTwitter, FaInstagram, FaYoutube, FaLinkedin, FaEnvelope, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaFacebook, FaTwitter, FaInstagram, FaYoutube, FaLinkedin, FaEnvelope, FaMapMarkerAlt, FaPhone } from 'react-icons/fa';
 
 const Footer = () => {
   return (
-    <footer className="bg-cleanWhite border-t-2 border-subtleGray mt-12">
+    <footer className="bg-cleanWhite border-t-2 border-subtleGray mt-12 pb-20 md:pb-24">
       <div className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* About Section */}
@@ -68,12 +68,20 @@ const Footer = () => {
               <li className="flex items-start gap-3">
                 <FaMapMarkerAlt className="mt-1 text-newsRed flex-shrink-0" />
                 <span className="text-slateBody leading-relaxed">
-                  फ्लॅट नं. ३०३, डी विंग,<br />
-                  अमारा क्वाड्रियम रेसिडेन्सी,<br />
-                  न्याती इटर्निटीजवळ,<br />
-                  पुणेकर नगर, उंदरी,<br />
-                  पुणे, महाराष्ट्र - ४११०६०
+                  स.नं २ अवनी ए विंग तिसरा फ्लोर ३०२,<br />
+                  न्याती चौक, डी.पी.एस विद्यालय जवळ,<br />
+                  मोहम्मदवाडी, पुणे सिटी,<br />
+                  पुणे (महाराष्ट्र) - ४११०६०
                 </span>
+              </li>
+              <li className="flex items-center gap-3">
+                <FaPhone className="text-newsRed flex-shrink-0" />
+                <a 
+                  href="tel:+919158578008" 
+                  className="text-slateBody hover:text-newsRed transition-colors"
+                >
+                  मो. नं. ९१५८५७८००८
+                </a>
               </li>
               <li className="flex items-center gap-3">
                 <FaEnvelope className="text-newsRed flex-shrink-0" />

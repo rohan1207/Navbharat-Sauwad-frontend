@@ -1,18 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SubscribePopup from './SubscribePopup';
+import { useHeader } from '../context/HeaderContext';
+import { FaEye, FaChartLine } from 'react-icons/fa';
 
 const Header = () => {
   const [isSubscribeOpen, setIsSubscribeOpen] = useState(false);
+  const { isHeaderVisible, headerRef } = useHeader();
+  const [stats, setStats] = useState({
+    totalVisits: 789346,
+    visitsToday: 464,
+    totalHits: 1355258,
+    hitsToday: 2369
+  });
+  
   const currentDate = new Date().toLocaleDateString('mr-IN', {
     day: 'numeric',
     month: 'long',
     year: 'numeric'
   });
 
+  // TODO: Fetch real stats from API
+  // useEffect(() => {
+  //   const fetchStats = async () => {
+  //     try {
+  //       const data = await apiFetch('/stats');
+  //       if (data) setStats(data);
+  //     } catch (error) {
+  //       console.error('Error fetching stats:', error);
+  //     }
+  //   };
+  //   fetchStats();
+  // }, []);
+
   return (
     <>
-      <header className="bg-cleanWhite border-b border-subtleGray fixed top-0 left-0 right-0 z-50 shadow-sm">
+      <header 
+        ref={headerRef}
+        className={`bg-cleanWhite border-b border-subtleGray fixed top-0 left-0 right-0 z-50 shadow-sm will-change-transform ${
+          isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+        }`}
+        style={{
+          transition: 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
+          transform: `translateY(${isHeaderVisible ? '0' : '-100%'})`
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Top Info Bar - Desktop */}
           <div className="hidden md:flex items-center justify-between py-2.5 px-4 bg-gradient-to-r from-subtleGray/40 to-subtleGray/20 border-b border-subtleGray/60">
@@ -26,6 +60,39 @@ const Header = () => {
                 <span className="text-deepCharcoal font-semibold">शिवानी रोहन सुरवसे पाटील</span>
               </div>
             </div>
+
+            {/* Website Statistics - Center */}
+            <div className="hidden xl:flex items-center gap-4 px-4">
+              <div className="flex items-center gap-2 px-3 py-1 bg-white/60 backdrop-blur-sm rounded-md border border-subtleGray/40 shadow-sm">
+                <FaEye className="text-newsRed text-xs" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-metaGray leading-tight">Visit Today</span>
+                  <span className="text-xs font-bold text-deepCharcoal">{stats.visitsToday.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1 bg-white/60 backdrop-blur-sm rounded-md border border-subtleGray/40 shadow-sm">
+                <FaChartLine className="text-newsRed text-xs" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-metaGray leading-tight">Total Visit</span>
+                  <span className="text-xs font-bold text-deepCharcoal">{stats.totalVisits.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1 bg-white/60 backdrop-blur-sm rounded-md border border-subtleGray/40 shadow-sm">
+                <FaEye className="text-editorialBlue text-xs" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-metaGray leading-tight">Hits Today</span>
+                  <span className="text-xs font-bold text-deepCharcoal">{stats.hitsToday.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1 bg-white/60 backdrop-blur-sm rounded-md border border-subtleGray/40 shadow-sm">
+                <FaChartLine className="text-editorialBlue text-xs" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-metaGray leading-tight">Total Hits</span>
+                  <span className="text-xs font-bold text-deepCharcoal">{stats.totalHits.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+            </div>
+
             <a 
               href="mailto:navmanch25@gmail.com" 
               className="flex items-center gap-2 text-xs text-metaGray hover:text-newsRed transition-all duration-300 group"
@@ -54,6 +121,25 @@ const Header = () => {
                 <span className="text-metaGray font-semibold">Chief Editor:</span>
                 <span className="text-deepCharcoal font-semibold">शिवानी रोहन सुरवसे पाटील</span>
               </div>
+              
+              {/* Mobile Statistics - Compact */}
+              <div className="flex items-center gap-2 mt-1 pt-1.5 border-t border-subtleGray/30">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/60 backdrop-blur-sm rounded border border-subtleGray/40">
+                  <FaEye className="text-newsRed text-[10px]" />
+                  <span className="text-[9px] text-metaGray">Visit:</span>
+                  <span className="text-[9px] font-bold text-deepCharcoal">{stats.visitsToday.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/60 backdrop-blur-sm rounded border border-subtleGray/40">
+                  <FaChartLine className="text-newsRed text-[10px]" />
+                  <span className="text-[9px] text-metaGray">Total:</span>
+                  <span className="text-[9px] font-bold text-deepCharcoal">{(stats.totalVisits / 1000).toFixed(0)}K</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/60 backdrop-blur-sm rounded border border-subtleGray/40">
+                  <FaEye className="text-editorialBlue text-[10px]" />
+                  <span className="text-[9px] text-metaGray">Hits:</span>
+                  <span className="text-[9px] font-bold text-deepCharcoal">{stats.hitsToday.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -75,7 +161,7 @@ const Header = () => {
 
             <div className="flex items-center space-x-2">
               <Link
-                to="/epaper"
+                to="/epaper2"
                 className="px-3 py-1 rounded-full bg-editorialBlue text-cleanWhite text-xs font-semibold tracking-wide hover:bg-editorialBlue/90 transition-all duration-300 shadow-sm hover:shadow-md"
               >
                 ई-पेपर
@@ -113,7 +199,7 @@ const Header = () => {
             {/* Right: E-Paper and Subscribe */}
             <div className="flex items-center space-x-3">
               <Link
-                to="/epaper"
+                to="/epaper2"
                 className="bg-editorialBlue text-cleanWhite px-5 py-2 text-sm font-semibold uppercase tracking-wider hover:bg-editorialBlue/80 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 rounded-full"
               >
                 ई-पेपर

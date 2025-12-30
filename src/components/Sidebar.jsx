@@ -1,25 +1,82 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import newsData from '../data/newsData.json';
+import { apiFetch } from '../utils/api';
 
 const Sidebar = ({ type = 'left' }) => {
   const mostPopular = newsData.latestNews.slice(0, 5);
   const latestNews = newsData.latestNews.slice(0, 3);
+  const [ads, setAds] = useState([]);
+
+  useEffect(() => {
+    const fetchAds = async () => {
+      try {
+        const position = type === 'left' ? 'left' : 'right';
+        const data = await apiFetch(`/ads/active/${position}`);
+        if (data && data.length > 0) {
+          setAds(data);
+          // Track impressions
+          data.forEach(ad => {
+            if (ad._id) {
+              apiFetch(`/ads/${ad._id}/impression`, { method: 'POST' }).catch(console.error);
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching ads:', error);
+      }
+    };
+    fetchAds();
+  }, [type]);
+
+  const handleAdClick = async (adId, link) => {
+    if (adId) {
+      try {
+        await apiFetch(`/ads/${adId}/click`, { method: 'POST' });
+      } catch (error) {
+        console.error('Error tracking click:', error);
+      }
+    }
+    if (link) {
+      window.open(link, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   if (type === 'left') {
     return (
-      <aside className="w-full lg:w-64 space-y-6">
+      <aside className="w-full space-y-6">
         {/* Advertisement */}
-        <div className="bg-cleanWhite border border-subtleGray rounded p-4 text-center">
-          <p className="text-xs text-metaGray mb-2">जाहिरात</p>
-          <div className="h-64 bg-subtleGray rounded flex items-center justify-center overflow-hidden">
-            <img
-              src="/ad.png"
-              alt="Advertisement"
-              className="w-full h-full object-contain"
-            />
+        {ads.length > 0 ? (
+          ads.map((ad) => (
+            <div key={ad._id} className="group">
+              <div 
+                className="h-[420px] md:h-[500px] bg-gradient-to-br from-subtleGray/20 to-subtleGray/5 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.01] border border-subtleGray/20"
+                onClick={() => handleAdClick(ad._id, ad.link)}
+              >
+                {ad.videoUrl ? (
+                  <video
+                    src={ad.videoUrl}
+                    className="w-full h-full object-cover"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                  />
+                ) : (
+                  <img
+                    src={ad.imageUrl}
+                    alt={ad.title || 'जाहिरात'}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                )}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="h-[420px] md:h-[500px] bg-gradient-to-br from-subtleGray/10 to-subtleGray/5 rounded-xl flex items-center justify-center border border-subtleGray/10">
+            <p className="text-xs text-metaGray/60 font-medium">जाहिरात</p>
           </div>
-        </div>
+        )}
 
         {/* Most Popular */}
         <div>
@@ -59,18 +116,39 @@ const Sidebar = ({ type = 'left' }) => {
   const popularNews = allNews.slice(0, 5);
 
   return (
-    <aside className="w-full lg:w-64 space-y-6">
+    <aside className="w-full space-y-6">
       {/* Advertisement */}
-      <div className="bg-cleanWhite border border-subtleGray rounded-lg p-4 text-center shadow-sm">
-        <p className="text-xs text-metaGray mb-2 font-semibold">जाहिरात</p>
-        <div className="h-64 bg-subtleGray rounded-lg flex items-center justify-center overflow-hidden">
-          <img
-            src="/ad.png"
-            alt="Advertisement"
-            className="w-full h-full object-contain"
-          />
+      {ads.length > 0 ? (
+        ads.map((ad) => (
+          <div key={ad._id} className="group">
+            <div 
+              className="h-[420px] md:h-[500px] bg-gradient-to-br from-subtleGray/20 to-subtleGray/5 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.01] border border-subtleGray/20"
+              onClick={() => handleAdClick(ad._id, ad.link)}
+            >
+              {ad.videoUrl ? (
+                <video
+                  src={ad.videoUrl}
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={ad.imageUrl}
+                  alt={ad.title || 'जाहिरात'}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              )}
+            </div>
+          </div>
+        ))
+      ) : (
+        <div className="h-[420px] md:h-[500px] bg-gradient-to-br from-subtleGray/10 to-subtleGray/5 rounded-xl flex items-center justify-center border border-subtleGray/10">
+          <p className="text-xs text-metaGray/60 font-medium">जाहिरात</p>
         </div>
-      </div>
+      )}
 
       {/* Latest News Timeline */}
       <div className="bg-cleanWhite rounded-lg p-4 shadow-sm border border-subtleGray">
@@ -135,7 +213,88 @@ const Sidebar = ({ type = 'left' }) => {
           ))}
         </div>
       </div>
+
+      {/* Vertical Video Ad Section */}
+      <VerticalVideoAds />
     </aside>
+  );
+};
+
+// Vertical Video Ads Component
+const VerticalVideoAds = () => {
+  const [ads, setAds] = useState([]);
+
+  useEffect(() => {
+    const fetchAds = async () => {
+      try {
+        const data = await apiFetch('/ads/active/right-vertical-video');
+        if (data && data.length > 0) {
+          setAds(data);
+          // Track impressions
+          data.forEach(ad => {
+            if (ad._id) {
+              apiFetch(`/ads/${ad._id}/impression`, { method: 'POST' }).catch(console.error);
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching vertical video ads:', error);
+      }
+    };
+    fetchAds();
+  }, []);
+
+  const handleAdClick = async (adId, link) => {
+    if (adId) {
+      try {
+        await apiFetch(`/ads/${adId}/click`, { method: 'POST' });
+      } catch (error) {
+        console.error('Error tracking click:', error);
+      }
+    }
+    if (link) {
+      window.open(link, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  if (ads.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-4">
+      {ads.map((ad) => (
+        <div 
+          key={ad._id} 
+          className="bg-cleanWhite rounded-lg overflow-hidden shadow-sm border border-subtleGray/70 cursor-pointer hover:shadow-md transition-all duration-300 group"
+          onClick={() => handleAdClick(ad._id, ad.link)}
+        >
+          <div className="relative aspect-[9/16] bg-black">
+            {ad.videoUrl ? (
+              <video
+                src={ad.videoUrl}
+                className="w-full h-full object-cover"
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
+            ) : (
+              <img
+                src={ad.imageUrl}
+                alt={ad.title || 'जाहिरात'}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+            )}
+            <div className="absolute top-2 left-2 z-10">
+              <span className="text-[10px] text-cleanWhite/80 font-semibold uppercase tracking-wide bg-black/50 px-2 py-1 rounded">
+                व्हिडिओ जाहिरात
+              </span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 };
 
