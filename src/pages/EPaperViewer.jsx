@@ -88,7 +88,9 @@ const EPaperViewer = () => {
     }
   };
 
-  const shareUrl = window.location.href;
+  // Use backend URL for sharing so crawlers get proper meta tags
+  const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navbharat-sauwad-backend.onrender.com';
+  const shareUrl = `${backendBase}${window.location.pathname}${window.location.search}`;
   
   // Clean title - remove "Untitled" and empty titles
   const getCleanEpaperTitle = () => {

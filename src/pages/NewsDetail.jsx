@@ -147,7 +147,9 @@ const NewsDetail = () => {
   };
   
   const articleImage = getAbsoluteImageUrl(news?.featuredImage || news?.image || '');
-  const articleUrl = news ? `${window.location.origin}/news/${news._id || news.id}` : window.location.href;
+  // Use backend URL for sharing so crawlers get proper meta tags
+  const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navbharat-sauwad-backend.onrender.com';
+  const articleUrl = news ? `${backendBase}/news/${news._id || news.id}` : window.location.href;
 
   return (
     <>

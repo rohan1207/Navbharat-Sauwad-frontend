@@ -4,8 +4,31 @@ import { FaWhatsapp, FaTwitter, FaFacebook, FaShareAlt, FaTimes } from 'react-ic
 const ShareButtons = ({ title, description, image, url }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Get current page URL if not provided
-  const shareUrl = url || window.location.href;
+  // Helper function to convert frontend URL to backend URL for crawlers
+  const getBackendUrl = (frontendUrl) => {
+    if (!frontendUrl) return frontendUrl;
+    
+    const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navbharat-sauwad-backend.onrender.com';
+    
+    // Extract path from frontend URL
+    try {
+      const urlObj = new URL(frontendUrl);
+      // Return backend URL with same path
+      return `${backendBase}${urlObj.pathname}${urlObj.search}`;
+    } catch (e) {
+      // If URL parsing fails, try simple string replacement
+      const frontendBase = window.location.origin;
+      if (frontendUrl.startsWith(frontendBase)) {
+        return frontendUrl.replace(frontendBase, backendBase);
+      }
+      // If it's already a backend URL or absolute URL, return as is
+      return frontendUrl;
+    }
+  };
+
+  // Get current page URL if not provided, and convert to backend URL
+  const frontendUrl = url || window.location.href;
+  const shareUrl = getBackendUrl(frontendUrl);
   const shareTitle = title || document.title;
   const shareDescription = description || '';
   const shareImage = image || '';
