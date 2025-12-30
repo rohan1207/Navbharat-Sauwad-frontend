@@ -69,9 +69,11 @@ const TextToSpeech = ({ article }) => {
       const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
       
       // Create audio URLs using backend proxy for each chunk
-      const audioUrls = chunks.map(chunk => {
+      // Add a small random delay parameter to avoid rate limiting
+      const audioUrls = chunks.map((chunk, index) => {
         const encodedText = encodeURIComponent(chunk);
-        return `${API_BASE}/tts?text=${encodedText}&lang=${lang}`;
+        // Add index to URL to ensure unique requests (helps with caching and rate limiting)
+        return `${API_BASE}/tts?text=${encodedText}&lang=${lang}&_=${Date.now() + index}`;
       });
 
       // Stop any current playback
@@ -84,9 +86,9 @@ const TextToSpeech = ({ article }) => {
       const audio = new Audio();
       audioRef.current = audio;
       
-      // Set playback speed to 1.1x (slightly faster)
-      audio.defaultPlaybackRate = 1.1;
-      audio.playbackRate = 1.1;
+      // Set playback speed to 1.2x (slightly faster - was 1.1x)
+      audio.defaultPlaybackRate = 1.2;
+      audio.playbackRate = 1.2;
 
       let currentChunkIndex = 0;
 
@@ -98,25 +100,48 @@ const TextToSpeech = ({ article }) => {
         }
 
         audio.src = audioUrls[currentChunkIndex];
-        audio.play();
-
+        
+        // Add error handling before play
+        audio.onerror = (e) => {
+          console.error('Error loading audio chunk:', currentChunkIndex, e);
+          console.error('Audio error details:', {
+            error: audio.error,
+            code: audio.error?.code,
+            message: audio.error?.message,
+            src: audio.src
+          });
+          
+          // Try to continue with next chunk
+          currentChunkIndex++;
+          if (!isPaused && currentChunkIndex < audioUrls.length) {
+            setTimeout(() => playNextChunk(), 100);
+          } else {
+            setIsPlaying(false);
+            setIsPaused(false);
+            alert('Audio playback error. Please try again.');
+          }
+        };
+        
+        // Wait for audio to be ready before playing
+        audio.oncanplaythrough = () => {
+          audio.play().catch(err => {
+            console.error('Error playing audio:', err);
+            audio.onerror(err);
+          });
+        };
+        
         audio.onended = () => {
           currentChunkIndex++;
-          // Small delay to ensure smooth transition
+          // Add a small delay between chunks to avoid rate limiting
           setTimeout(() => {
             if (!isPaused) {
               playNextChunk();
             }
-          }, 50); // Very small delay for smooth transition
+          }, 200); // Increased delay to avoid rate limiting
         };
-
-        audio.onerror = () => {
-          console.error('Error playing audio chunk:', currentChunkIndex);
-          currentChunkIndex++;
-          if (!isPaused) {
-            playNextChunk();
-          }
-        };
+        
+        // Load the audio source
+        audio.load();
       };
 
       audio.onplay = () => {
@@ -160,7 +185,7 @@ const TextToSpeech = ({ article }) => {
 
   const resume = () => {
     if (audioRef.current && isPaused) {
-      audioRef.current.playbackRate = 1.1; // Maintain speed
+      audioRef.current.playbackRate = 1.2; // Maintain speed (slightly faster)
       audioRef.current.play();
       setIsPaused(false);
     }
