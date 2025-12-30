@@ -87,7 +87,7 @@ const Sidebar = ({ type = 'left' }) => {
             {mostPopular.map((news, index) => (
               <Link
                 key={news.id}
-                to={`/news/${news._id || news.id || ''}`}
+                to={`/news/${news.slug || news._id || news.id || ''}`}
                 className="flex space-x-3 group hover:bg-subtleGray p-2 rounded transition-colors"
               >
                 <div className="flex-shrink-0 w-20 h-20 bg-subtleGray rounded overflow-hidden">
@@ -164,7 +164,7 @@ const Sidebar = ({ type = 'left' }) => {
             <div key={news.id} className="relative pl-6">
               <div className="absolute left-0 top-1 w-4 h-4 bg-newsRed rounded-full border-2 border-white shadow-sm"></div>
               <Link
-                to={`/news/${news._id || news.id || ''}`}
+                to={`/news/${news.slug || news._id || news.id || ''}`}
                 className="block group hover:bg-subtleGray/50 p-2 rounded-lg transition-colors"
               >
                 <p className="text-xs text-metaGray mb-1">
@@ -197,7 +197,7 @@ const Sidebar = ({ type = 'left' }) => {
           {popularNews.map((news, index) => (
             <Link
               key={news.id}
-              to={`/news/${news.id}`}
+              to={`/news/${news.slug || news._id || news.id}`}
               className="flex items-start gap-3 group hover:bg-subtleGray/50 p-2 rounded-lg transition-colors"
             >
               <div className="flex-shrink-0 w-6 h-6 bg-newsRed text-cleanWhite rounded-full flex items-center justify-center font-bold text-xs">

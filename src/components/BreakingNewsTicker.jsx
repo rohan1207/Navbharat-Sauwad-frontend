@@ -58,7 +58,7 @@ const BreakingNewsTicker = () => {
               id: article._id || article.id,
               title: article.title,
               category: categoryName,
-              url: `/news/${article._id || article.id}`
+              url: `/news/${article.slug || article._id || article.id}`
             };
           });
 

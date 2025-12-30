@@ -28,14 +28,22 @@ const EPaperViewer = () => {
           return;
         }
         
-        // Try to find epaper by id (handle both string and number comparison)
+        // Try to find epaper by slug first, then by id
         const found = epapers.find(ep => {
+          const epSlug = ep.slug;
           const epId = ep.id !== undefined ? ep.id : ep._id;
-          if (epId === undefined || epId === null) return false;
-          // Convert both to strings for comparison
-          const epIdStr = String(epId);
-          const searchIdStr = String(id);
-          return epIdStr === searchIdStr;
+          
+          // Match by slug first
+          if (epSlug && epSlug === id) return true;
+          
+          // Then match by ID
+          if (epId !== undefined && epId !== null) {
+            const epIdStr = String(epId);
+            const searchIdStr = String(id);
+            return epIdStr === searchIdStr;
+          }
+          
+          return false;
         });
         
         if (found) {
@@ -89,8 +97,16 @@ const EPaperViewer = () => {
   };
 
   // Use backend URL for sharing so crawlers get proper meta tags
+  // Prefer slug over ID for better SEO
   const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navbharat-sauwad-backend.onrender.com';
-  const shareUrl = `${backendBase}${window.location.pathname}${window.location.search}`;
+  let sharePath = window.location.pathname;
+  
+  // Replace ID with slug if available
+  if (epaper && epaper.slug && sharePath.includes(`/epaper/${id}`)) {
+    sharePath = sharePath.replace(`/epaper/${id}`, `/epaper/${epaper.slug}`);
+  }
+  
+  const shareUrl = `${backendBase}${sharePath}${window.location.search}`;
   
   // Clean title - remove "Untitled" and empty titles
   const getCleanEpaperTitle = () => {

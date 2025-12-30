@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { FaWhatsapp, FaTwitter, FaFacebook, FaShareAlt, FaTimes } from 'react-icons/fa';
+import React from 'react';
+import { FaWhatsapp, FaTwitter, FaFacebook, FaShareAlt } from 'react-icons/fa';
 
 const ShareButtons = ({ title, description, image, url }) => {
-  const [isOpen, setIsOpen] = useState(false);
 
   // Helper function to convert frontend URL to backend URL for crawlers
   const getBackendUrl = (frontendUrl) => {
@@ -46,7 +45,6 @@ const ShareButtons = ({ title, description, image, url }) => {
     // Use WhatsApp share API - this triggers preview card generation
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank', 'width=600,height=400');
-    setIsOpen(false);
   };
 
   // Twitter share
@@ -54,14 +52,12 @@ const ShareButtons = ({ title, description, image, url }) => {
     const text = `${shareTitle}\n\n${shareUrl}`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
     window.open(twitterUrl, '_blank', 'width=600,height=400');
-    setIsOpen(false);
   };
 
   // Facebook share
   const shareFacebook = () => {
     const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
     window.open(facebookUrl, '_blank', 'width=600,height=400');
-    setIsOpen(false);
   };
 
   // Copy link to clipboard
@@ -69,7 +65,6 @@ const ShareButtons = ({ title, description, image, url }) => {
     try {
       await navigator.clipboard.writeText(shareUrl);
       alert('लिंक कॉपी केला गेला!');
-      setIsOpen(false);
     } catch (error) {
       console.error('Failed to copy:', error);
       alert('लिंक कॉपी करताना त्रुटी आली');
@@ -77,101 +72,50 @@ const ShareButtons = ({ title, description, image, url }) => {
   };
 
   return (
-    <div className="relative">
-      {/* Share Button */}
+    <div className="flex items-center gap-2 flex-wrap">
+      {/* WhatsApp Share */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 bg-editorialBlue text-cleanWhite px-4 py-2 rounded-lg hover:bg-editorialBlue/90 transition-all duration-300 shadow-sm hover:shadow-md"
-        aria-label="शेअर करा"
+        onClick={shareWhatsApp}
+        className="flex items-center gap-2 bg-green-500 text-cleanWhite px-4 py-2 rounded-lg hover:bg-green-600 transition-all duration-300 shadow-sm hover:shadow-md"
+        aria-label="WhatsApp वर शेअर करा"
+        title="WhatsApp वर शेअर करा"
       >
-        <FaShareAlt className="w-4 h-4" />
-        <span className="font-semibold text-sm">शेअर करा</span>
+        <FaWhatsapp className="w-4 h-4" />
+        <span className="font-semibold text-sm hidden sm:inline">WhatsApp</span>
       </button>
 
-      {/* Share Options Dropdown */}
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setIsOpen(false)}
-          />
-          
-          {/* Dropdown Menu */}
-          <div className="absolute right-0 mt-2 w-56 bg-cleanWhite rounded-lg shadow-xl border border-subtleGray z-50 overflow-hidden">
-            <div className="p-2">
-              {/* Header */}
-              <div className="flex items-center justify-between px-3 py-2 border-b border-subtleGray mb-2">
-                <h3 className="font-bold text-deepCharcoal text-sm">शेअर करा</h3>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="text-metaGray hover:text-deepCharcoal transition-colors"
-                  aria-label="बंद करा"
-                >
-                  <FaTimes className="w-4 h-4" />
-                </button>
-              </div>
+      {/* Facebook Share */}
+      <button
+        onClick={shareFacebook}
+        className="flex items-center gap-2 bg-blue-600 text-cleanWhite px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-300 shadow-sm hover:shadow-md"
+        aria-label="Facebook वर शेअर करा"
+        title="Facebook वर शेअर करा"
+      >
+        <FaFacebook className="w-4 h-4" />
+        <span className="font-semibold text-sm hidden sm:inline">Facebook</span>
+      </button>
 
-              {/* Share Options */}
-              <div className="space-y-1">
-                <button
-                  onClick={shareWhatsApp}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-subtleGray rounded-lg transition-colors group"
-                >
-                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center group-hover:bg-green-600 transition-colors">
-                    <FaWhatsapp className="w-5 h-5 text-cleanWhite" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-deepCharcoal text-sm">WhatsApp</div>
-                    <div className="text-xs text-metaGray">WhatsApp वर शेअर करा</div>
-                  </div>
-                </button>
+      {/* Twitter Share */}
+      <button
+        onClick={shareTwitter}
+        className="flex items-center gap-2 bg-sky-500 text-cleanWhite px-4 py-2 rounded-lg hover:bg-sky-600 transition-all duration-300 shadow-sm hover:shadow-md"
+        aria-label="Twitter वर शेअर करा"
+        title="Twitter वर शेअर करा"
+      >
+        <FaTwitter className="w-4 h-4" />
+        <span className="font-semibold text-sm hidden sm:inline">Twitter</span>
+      </button>
 
-                <button
-                  onClick={shareFacebook}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-subtleGray rounded-lg transition-colors group"
-                >
-                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center group-hover:bg-blue-700 transition-colors">
-                    <FaFacebook className="w-5 h-5 text-cleanWhite" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-deepCharcoal text-sm">Facebook</div>
-                    <div className="text-xs text-metaGray">Facebook वर शेअर करा</div>
-                  </div>
-                </button>
-
-                <button
-                  onClick={shareTwitter}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-subtleGray rounded-lg transition-colors group"
-                >
-                  <div className="w-10 h-10 bg-sky-500 rounded-full flex items-center justify-center group-hover:bg-sky-600 transition-colors">
-                    <FaTwitter className="w-5 h-5 text-cleanWhite" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-deepCharcoal text-sm">Twitter</div>
-                    <div className="text-xs text-metaGray">Twitter वर शेअर करा</div>
-                  </div>
-                </button>
-
-                <div className="border-t border-subtleGray my-1" />
-
-                <button
-                  onClick={copyLink}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-subtleGray rounded-lg transition-colors"
-                >
-                  <div className="w-10 h-10 bg-subtleGray rounded-full flex items-center justify-center">
-                    <FaShareAlt className="w-5 h-5 text-deepCharcoal" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-deepCharcoal text-sm">लिंक कॉपी करा</div>
-                    <div className="text-xs text-metaGray">URL क्लिपबोर्डवर कॉपी करा</div>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      {/* Copy Link */}
+      <button
+        onClick={copyLink}
+        className="flex items-center gap-2 bg-subtleGray text-deepCharcoal px-4 py-2 rounded-lg hover:bg-metaGray transition-all duration-300 shadow-sm hover:shadow-md"
+        aria-label="लिंक कॉपी करा"
+        title="लिंक कॉपी करा"
+      >
+        <FaShareAlt className="w-4 h-4" />
+        <span className="font-semibold text-sm hidden sm:inline">कॉपी</span>
+      </button>
     </div>
   );
 };

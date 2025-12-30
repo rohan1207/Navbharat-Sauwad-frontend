@@ -26,13 +26,22 @@ const EPaperSection = () => {
           return;
         }
         
-        // Try to find epaper by id (handle both string and number comparison)
+        // Try to find epaper by slug first, then by id
         const found = epapers.find(ep => {
+          const epSlug = ep.slug;
           const epId = ep.id !== undefined ? ep.id : ep._id;
-          if (epId === undefined || epId === null) return false;
-          const epIdStr = String(epId);
-          const searchIdStr = String(id);
-          return epIdStr === searchIdStr;
+          
+          // Match by slug first
+          if (epSlug && epSlug === id) return true;
+          
+          // Then match by ID
+          if (epId !== undefined && epId !== null) {
+            const epIdStr = String(epId);
+            const searchIdStr = String(id);
+            return epIdStr === searchIdStr;
+          }
+          
+          return false;
         });
         
         if (!found) {
@@ -58,12 +67,21 @@ const EPaperSection = () => {
         console.log('✅ Found page:', foundPage.pageNo);
         setPage(foundPage);
 
-        // Find section - handle both string and number ID comparison
+        // Find section by slug first, then by ID
         const foundSection = foundPage.news?.find(n => {
+          const nSlug = n.slug;
           const nId = n.id;
           const sId = sectionId;
-          if (nId === undefined || nId === null) return false;
-          return String(nId) === String(sId) || nId === parseInt(sId) || nId === sId;
+          
+          // Match by slug first
+          if (nSlug && nSlug === sId) return true;
+          
+          // Then match by ID
+          if (nId !== undefined && nId !== null) {
+            return String(nId) === String(sId) || nId === parseInt(sId) || nId === sId;
+          }
+          
+          return false;
         });
         if (!foundSection) {
           console.log('❌ Section not found:', sectionId);
@@ -137,8 +155,19 @@ const EPaperSection = () => {
   };
 
   // Use backend URL for sharing so crawlers get proper meta tags
+  // Prefer slug over ID for better SEO
   const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navbharat-sauwad-backend.onrender.com';
-  const shareUrl = `${backendBase}${window.location.pathname}${window.location.search}`;
+  let sharePath = window.location.pathname;
+  
+  // Replace IDs with slugs if available
+  if (epaper && epaper.slug && sharePath.includes(`/epaper/${id}`)) {
+    sharePath = sharePath.replace(`/epaper/${id}`, `/epaper/${epaper.slug}`);
+  }
+  if (section && section.slug && sharePath.includes(`/section/${sectionId}`)) {
+    sharePath = sharePath.replace(`/section/${sectionId}`, `/section/${section.slug}`);
+  }
+  
+  const shareUrl = `${backendBase}${sharePath}${window.location.search}`;
   
   // Clean title - remove "Untitled" and empty titles
   const getCleanSectionTitle = () => {

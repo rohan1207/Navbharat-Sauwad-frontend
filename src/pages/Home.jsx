@@ -372,7 +372,7 @@ const Home = () => {
             {/* Featured Article - Large Hero Section */}
             {featuredNews && (
               <article className="mb-8 bg-cleanWhite rounded-lg overflow-hidden shadow-sm border border-subtleGray/70">
-                <Link to={`/news/${featuredNews._id || featuredNews.id || ''}`} className="block group">
+                <Link to={`/news/${featuredNews.slug || featuredNews._id || featuredNews.id || ''}`} className="block group">
                   <div className="relative overflow-hidden">
                     <img
                       src={featuredNews.featuredImage || featuredNews.image}
@@ -436,7 +436,7 @@ const Home = () => {
                 {otherNews.slice(0, 2).map((news) => (
                   <Link
                     key={news.id || news._id}
-                    to={`/news/${news._id || news.id || ''}`}
+                    to={`/news/${news.slug || news._id || news.id || ''}`}
                     className="group bg-cleanWhite rounded-lg overflow-hidden shadow-sm border border-subtleGray/70 hover:shadow-md transition-all duration-300"
                   >
                     <div className="relative overflow-hidden">
@@ -478,7 +478,7 @@ const Home = () => {
                 {otherNews.slice(2, 5).map((news) => (
                   <Link
                     key={news.id || news._id}
-                    to={`/news/${news._id || news.id || ''}`}
+                    to={`/news/${news.slug || news._id || news.id || ''}`}
                     className="group bg-cleanWhite rounded-lg overflow-hidden shadow-sm border border-subtleGray/70 hover:shadow-md transition-all duration-300"
                   >
                     <div className="relative overflow-hidden">
@@ -629,7 +629,7 @@ const Home = () => {
                 {category.news && category.news[0] && (
                   <div className="mb-6">
                     <Link
-                      to={`/news/${category.news[0]._id || category.news[0].id || ''}`}
+                      to={`/news/${category.news[0].slug || category.news[0]._id || category.news[0].id || ''}`}
                       className="group block bg-cleanWhite rounded-lg overflow-hidden shadow-sm border border-subtleGray/70 hover:shadow-md transition-all duration-300"
                     >
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
@@ -669,7 +669,7 @@ const Home = () => {
                     {category.news.slice(1, 4).map((news) => (
                       <Link
                         key={news.id || news._id}
-                        to={`/news/${news._id || news.id || ''}`}
+                        to={`/news/${news.slug || news._id || news.id || ''}`}
                         className="group bg-cleanWhite rounded-lg overflow-hidden shadow-sm border border-subtleGray/70 hover:shadow-md transition-all duration-300"
                       >
                         <div className="relative overflow-hidden">
@@ -707,7 +707,7 @@ const Home = () => {
                 {popularArticles.map((article, index) => (
                   <Link
                     key={article.id || article._id}
-                    to={`/news/${article._id || article.id || ''}`}
+                    to={`/news/${article.slug || article._id || article.id || ''}`}
                     className="flex items-start gap-4 group hover:bg-subtleGray/50 p-3 rounded-lg transition-colors"
                   >
                     <div className="flex-shrink-0 w-8 h-8 bg-newsRed text-cleanWhite rounded-full flex items-center justify-center font-bold text-sm">

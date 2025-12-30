@@ -148,8 +148,11 @@ const NewsDetail = () => {
   
   const articleImage = getAbsoluteImageUrl(news?.featuredImage || news?.image || '');
   // Use backend URL for sharing so crawlers get proper meta tags
+  // Prefer slug over ID for better SEO
   const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navbharat-sauwad-backend.onrender.com';
-  const articleUrl = news ? `${backendBase}/news/${news._id || news.id}` : window.location.href;
+  const articleUrl = news 
+    ? `${backendBase}/news/${news.slug || news._id || news.id}` 
+    : window.location.href;
 
   return (
     <>
