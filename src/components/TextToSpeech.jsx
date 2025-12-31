@@ -36,6 +36,77 @@ const TextToSpeech = ({ article }) => {
     return fullText.trim();
   };
 
+  // Smart sentence splitting that handles abbreviations
+  const splitIntoSentences = (text) => {
+    // Comprehensive list of abbreviations (English and Marathi)
+    // Marathi abbreviations are most important for this newspaper
+    const abbreviations = [
+      // English abbreviations
+      'Mr', 'Mrs', 'Ms', 'Dr', 'Prof', 'Sr', 'Jr', 'Inc', 'Ltd', 'Co', 'Corp',
+      'Gov', 'St', 'Ave', 'Rd', 'Blvd', 'No', 'vs', 'etc', 'e.g', 'i.e', 'a.m', 'p.m',
+      'AM', 'PM', 'U.S', 'U.K', 'U.N', 'E.U', 'NATO', 'UNESCO', 'WHO', 'UNICEF',
+      // Marathi abbreviations (most common in news articles)
+      'डॉ', 'प्रा', 'श्री', 'श्रीमती', 'कु', 'मि', 'से', 'के', 'कं', 'लि', 
+      'सं', 'इ', 'म्हणजे', 'उदा', 'पू', 'वि', 'मा', 'सा', 'पा', 'अं', 'खं',
+      'कॉ', 'डॉक्टर', 'प्रोफेसर', 'मंत्री', 'सेवा', 'कंपनी', 'लिमिटेड'
+    ];
+    
+    // Create a marker to temporarily replace abbreviation periods
+    const marker = '‹ABBREV_PERIOD›';
+    let processedText = text;
+    
+    // Protect abbreviation periods by replacing them with a marker
+    // For Marathi, we need to handle both space and no-space cases
+    abbreviations.forEach((abbr) => {
+      // Escape special regex characters in abbreviation
+      const escapedAbbr = abbr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      
+      // Match abbreviation followed by period
+      // For Marathi: match with optional space before period, and space or end after
+      // Pattern: abbreviation + optional space + period + (space or end of word)
+      const regex = new RegExp(`(${escapedAbbr})\\s*\\.(?=\\s|$|[।!?])`, 'g');
+      processedText = processedText.replace(regex, (match, abbrPart) => {
+        return `${abbrPart}${marker}`;
+      });
+    });
+    
+    // Now split on sentence endings (।.!?)
+    const sentenceEndings = /([।.!?]+)/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = sentenceEndings.exec(processedText)) !== null) {
+      const beforeEnding = processedText.substring(lastIndex, match.index);
+      const ending = match[0];
+      
+      if (beforeEnding.trim().length > 0) {
+        // Restore abbreviation periods and add ending
+        let sentence = beforeEnding + ending;
+        sentence = sentence.replace(new RegExp(marker, 'g'), '.');
+        parts.push(sentence);
+      }
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add remaining text
+    if (lastIndex < processedText.length) {
+      let remaining = processedText.substring(lastIndex);
+      remaining = remaining.replace(new RegExp(marker, 'g'), '.');
+      if (remaining.trim().length > 0) {
+        parts.push(remaining);
+      }
+    }
+    
+    // If no sentence endings found, return whole text (with restored periods)
+    if (parts.length === 0) {
+      return [text];
+    }
+    
+    return parts;
+  };
+
   // Google Translate TTS via backend proxy - Free and reliable
   const speakWithGoogleTTS = async (text, lang = 'mr') => {
     // Prevent multiple instances
@@ -48,20 +119,40 @@ const TextToSpeech = ({ article }) => {
     setIsLoading(true);
     
     try {
-      // Split text at sentence boundaries (full stops) instead of fixed chunks
-      const sentences = text.split(/([।.!?।]+)/).filter(s => s.trim().length > 0);
+      // Split text using smart sentence splitting (handles abbreviations)
+      const sentences = splitIntoSentences(text);
       const chunks = [];
       let currentChunk = '';
-      const maxChunkLength = 200; // Still respect character limit
+      const maxChunkLength = 180; // Reduced to stay well under Google's 200 char limit
       
       for (let i = 0; i < sentences.length; i++) {
-        const sentence = sentences[i];
-        // If adding this sentence would exceed limit, save current chunk and start new one
-        if (currentChunk.length + sentence.length > maxChunkLength && currentChunk.length > 0) {
+        const sentence = sentences[i].trim();
+        if (!sentence || sentence.length === 0) continue;
+        
+        // If sentence itself is too long, split it further
+        if (sentence.length > maxChunkLength) {
+          // Save current chunk if it has content
+          if (currentChunk.trim().length > 0) {
+            chunks.push(currentChunk.trim());
+            currentChunk = '';
+          }
+          // Split long sentence by commas or spaces
+          const parts = sentence.split(/([,।]\s*)/);
+          for (const part of parts) {
+            if (part.trim().length === 0) continue;
+            if (currentChunk.length + part.length > maxChunkLength && currentChunk.length > 0) {
+              chunks.push(currentChunk.trim());
+              currentChunk = part.trim() + ' ';
+            } else {
+              currentChunk += part.trim() + ' ';
+            }
+          }
+        } else if (currentChunk.length + sentence.length > maxChunkLength && currentChunk.length > 0) {
+          // If adding this sentence would exceed limit, save current chunk and start new one
           chunks.push(currentChunk.trim());
-          currentChunk = sentence;
+          currentChunk = sentence + ' ';
         } else {
-          currentChunk += sentence;
+          currentChunk += sentence + ' ';
         }
       }
       
@@ -69,14 +160,22 @@ const TextToSpeech = ({ article }) => {
       if (currentChunk.trim().length > 0) {
         chunks.push(currentChunk.trim());
       }
+      
+      // Filter out empty chunks and validate
+      const validChunks = chunks.filter(chunk => chunk && chunk.trim().length > 0 && chunk.length <= 200);
+      
+      if (validChunks.length === 0) {
+        throw new Error('No valid text chunks to process');
+      }
 
       // Get API base URL from environment or use default
       const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
       
       // Create audio URLs using backend proxy for each chunk
       // Add a small random delay parameter to avoid rate limiting
-      const audioUrls = chunks.map((chunk, index) => {
-        const encodedText = encodeURIComponent(chunk);
+      const audioUrls = validChunks.map((chunk, index) => {
+        // Ensure chunk is properly encoded (only encode once)
+        const encodedText = encodeURIComponent(chunk.trim());
         // Add index to URL to ensure unique requests (helps with caching and rate limiting)
         return `${API_BASE}/tts?text=${encodedText}&lang=${lang}&_=${Date.now() + index}`;
       });
@@ -91,9 +190,9 @@ const TextToSpeech = ({ article }) => {
       const audio = new Audio();
       audioRef.current = audio;
       
-      // Set playback speed to 1.2x (slightly faster - was 1.1x)
-      audio.defaultPlaybackRate = 1.2;
-      audio.playbackRate = 1.2;
+      // Set playback speed to 1.5x (news anchor pace - faster and more natural)
+      audio.defaultPlaybackRate = 1.5;
+      audio.playbackRate = 1.5;
 
       let currentChunkIndex = 0;
 
@@ -137,7 +236,7 @@ const TextToSpeech = ({ article }) => {
         
         audio.onended = () => {
           currentChunkIndex++;
-          // Add a small delay between chunks to avoid rate limiting
+          // Minimal delay between chunks for smoother flow (news anchor style)
           setTimeout(() => {
             if (!isPaused) {
               playNextChunk();
@@ -145,7 +244,7 @@ const TextToSpeech = ({ article }) => {
               // If paused, reset processing flag
               isProcessingRef.current = false;
             }
-          }, 200); // Increased delay to avoid rate limiting
+          }, 50); // Reduced delay for faster, more natural flow
         };
         
         // Load the audio source
@@ -222,7 +321,7 @@ const TextToSpeech = ({ article }) => {
     if (audioRef.current && isPaused) {
       isProcessingRef.current = true;
       setIsLoading(true);
-      audioRef.current.playbackRate = 1.2; // Maintain speed (slightly faster)
+      audioRef.current.playbackRate = 1.5; // Maintain speed (news anchor pace)
       audioRef.current.play().catch(err => {
         console.error('Error resuming audio:', err);
         setIsPaused(true);

@@ -34,7 +34,7 @@ export const apiFetch = async (endpoint, options = {}) => {
   
   // Increased timeout for better reliability (10 seconds for most requests, 15 for critical)
   // Only use timeout for non-critical requests, let critical ones take longer
-  const timeout = fetchOptions.timeout || (fetchOptions.critical ? 15000 : 10000);
+  const timeout = fetchOptions.timeout || (fetchOptions.critical ? 15001 : 10000);
   const controller = new AbortController();
   const timeoutId = timeout ? setTimeout(() => controller.abort(), timeout) : null;
   

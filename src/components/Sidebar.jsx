@@ -26,7 +26,7 @@ const Sidebar = ({ type = 'left' }) => {
             if (ad._id) {
               apiFetch(`/ads/${ad._id}/impression`, { 
                 method: 'POST',
-                timeout: 5000 // Short timeout for tracking
+                timeout: 5001 // Short timeout for tracking
               }).catch(() => {
                 // Silently fail - tracking is not critical
               });
@@ -248,7 +248,7 @@ const Sidebar = ({ type = 'left' }) => {
         <div className="flex items-center gap-2 mb-3 sm:mb-4 pb-2 sm:pb-3 border-b border-subtleGray">
           <div className="h-4 sm:h-5 w-0.5 bg-newsRed rounded-full"></div>
           <h3 className="text-base sm:text-lg font-bold text-deepCharcoal">
-            ताज्या बातम्या
+            ठळक घडामोडी
           </h3>
         </div>
         <div className="space-y-3 sm:space-y-4 relative">
@@ -354,7 +354,7 @@ const VerticalVideoAds = () => {
             if (ad._id) {
               apiFetch(`/ads/${ad._id}/impression`, { 
                 method: 'POST',
-                timeout: 5000 // Short timeout for tracking
+                timeout: 5001 // Short timeout for tracking
               }).catch(() => {
                 // Silently fail - tracking is not critical
               });

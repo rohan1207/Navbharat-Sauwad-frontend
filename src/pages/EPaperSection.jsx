@@ -13,6 +13,17 @@ const EPaperSection = () => {
   const [section, setSection] = useState(null);
   const [croppedImageUrl, setCroppedImageUrl] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Track window size for responsive image sizing
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -267,12 +278,14 @@ const EPaperSection = () => {
     );
   }
 
-  // Calculate optimal display size based on section dimensions
+  // Calculate optimal display size based on section dimensions (for desktop only)
   const sectionAspectRatio = section.width / section.height;
-  const maxWidth = Math.min(1200, section.width * 2); // Scale up but limit
+  
+  // Desktop: scale up but limit
+  const maxWidth = Math.min(1200, section.width * 2);
   const maxHeight = Math.min(1600, section.height * 2);
   
-  // Maintain aspect ratio
+  // Maintain aspect ratio for desktop
   let displayWidth = maxWidth;
   let displayHeight = maxWidth / sectionAspectRatio;
   
@@ -292,15 +305,16 @@ const EPaperSection = () => {
       />
       <div className="min-h-screen bg-subtleGray">
         {/* Header */}
-        <div className="bg-cleanWhite border-b-2 border-subtleGray py-4 sticky top-0 z-40 shadow-sm">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between">
+        <div className="bg-cleanWhite border-b-2 border-subtleGray py-3 sm:py-4 sticky top-0 z-40 shadow-sm">
+          <div className="container mx-auto px-3 sm:px-4">
+            <div className="flex items-center justify-between gap-2">
               <Link
                 to={`/epaper/${id}`}
-                className="flex items-center gap-2 text-metaGray hover:text-deepCharcoal transition-colors font-semibold"
+                className="flex items-center gap-1.5 sm:gap-2 text-metaGray hover:text-deepCharcoal transition-colors font-semibold text-sm sm:text-base"
               >
-                <FaArrowLeft className="w-4 h-4" />
-                <span>मागे जा</span>
+                <FaArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">मागे जा</span>
+                <span className="sm:hidden">मागे</span>
               </Link>
               <ShareButtons
                 title={shareTitle}
@@ -313,31 +327,32 @@ const EPaperSection = () => {
         </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
         <div className="max-w-6xl mx-auto">
           {/* Top Logo - Seamless */}
-          <div className="flex items-center justify-center py-6 bg-gradient-to-b from-cleanWhite to-subtleGray/10 rounded-t-xl">
+          <div className="flex items-center justify-center py-4 sm:py-6 bg-gradient-to-b from-cleanWhite to-subtleGray/10 rounded-t-xl">
             <img
               src="/logo1.png"
               alt="नव मंच"
-              className="h-20 md:h-24 w-auto"
+              className="h-16 sm:h-20 md:h-24 w-auto"
             />
           </div>
           
-          {/* Cropped Image - Properly Sized */}
-          <div className="bg-cleanWhite overflow-hidden flex items-center justify-center" style={{ minHeight: '400px' }}>
+          {/* Cropped Image - Responsive for Mobile */}
+          <div className="bg-cleanWhite overflow-hidden flex items-center justify-center p-2 sm:p-4">
             {croppedImageUrl ? (
               <img
                 src={croppedImageUrl}
                 alt={getCleanSectionTitle()}
-                className="max-w-full h-auto"
+                className="w-full h-auto max-w-full object-contain md:w-auto md:max-w-none"
                 style={{ 
                   imageRendering: 'crisp-edges',
                   display: 'block',
-                  maxWidth: `${displayWidth}px`,
-                  maxHeight: `${displayHeight}px`,
-                  width: 'auto',
-                  height: 'auto'
+                  // Desktop: use calculated dimensions, Mobile: use 100% width (handled by className)
+                  ...(!isMobile ? {
+                    maxWidth: `${displayWidth}px`,
+                    maxHeight: `${displayHeight}px`
+                  } : {})
                 }}
                 onError={(e) => {
                   console.error('Error loading cropped image:', croppedImageUrl);
@@ -345,8 +360,8 @@ const EPaperSection = () => {
                 }}
               />
             ) : (
-              <div className="text-center text-metaGray py-12">
-                <p>छवी लोड होत आहे...</p>
+              <div className="text-center text-metaGray py-8 sm:py-12">
+                <p className="text-sm sm:text-base">छवी लोड होत आहे...</p>
               </div>
             )}
           </div>

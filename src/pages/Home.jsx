@@ -32,7 +32,7 @@ const HorizontalImageAds = () => {
             if (ad._id) {
               apiFetch(`/ads/${ad._id}/impression`, { 
                 method: 'POST',
-                timeout: 5000 // Short timeout for tracking
+                timeout: 5001 // Short timeout for tracking
               }).catch(() => {
                 // Silently fail - tracking is not critical
               });
@@ -235,7 +235,7 @@ const Home = () => {
                   apiFetch(`/ads/${ad._id}/impression`, { 
                     method: 'POST', 
                     useCache: false,
-                    timeout: 5000 // Short timeout for tracking
+                    timeout: 5001 // Short timeout for tracking
                   }).catch(() => {
                     // Silently fail - tracking is not critical
                   });
@@ -426,7 +426,7 @@ const Home = () => {
                           {new Date(featuredNews.publishedAt || featuredNews.createdAt || featuredNews.date).toLocaleDateString('mr-IN')}
                         </span>
                       </div>
-                      <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-cleanWhite mb-4 leading-tight group-hover:text-newsRed/90 transition-colors">
+                      <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-cleanWhite mb-4 leading-tight  transition-colors">
                         {featuredNews.title}
                       </h1>
                       <p className="text-base md:text-lg text-cleanWhite/90 line-clamp-2 mb-3">
@@ -494,7 +494,7 @@ const Home = () => {
                       </div>
                     </div>
                     <div className="p-4">
-                      <h3 className="text-lg font-bold text-deepCharcoal mb-2 line-clamp-2 group-hover:text-newsRed transition-colors">
+                      <h3 className="text-lg font-bold text-deepCharcoal mb-2 line-clamp-2">
                         {news.title}
                       </h3>
                       <p className="text-sm text-slateBody line-clamp-2 mb-3">
@@ -536,7 +536,7 @@ const Home = () => {
                       </div>
                     </div>
                     <div className="p-4">
-                      <h3 className="text-lg font-bold text-deepCharcoal mb-2 line-clamp-2 group-hover:text-newsRed transition-colors">
+                      <h3 className="text-lg font-bold text-deepCharcoal mb-2 line-clamp-2">
                         {news.title}
                       </h3>
                       <p className="text-sm text-slateBody line-clamp-2 mb-3">

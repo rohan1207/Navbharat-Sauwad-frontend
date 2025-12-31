@@ -48,7 +48,77 @@ const Header = () => {
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Top Info Bar - Desktop */}
+          {/* Mobile Header - Logo, Date, Buttons (Now First) */}
+          <div className="flex items-center justify-between py-2.5 md:hidden gap-2">
+            <div className="flex flex-col min-w-0 flex-shrink">
+              <span className="text-[10px] text-metaGray leading-tight whitespace-nowrap">
+                {currentDate}
+              </span>
+            </div>
+
+            <Link to="/" className="flex-shrink-0 mx-auto">
+              <img
+                src="/logo1.png"
+                alt="नवभारत संवाद"
+                className="h-16 sm:h-20 w-auto"
+              />
+            </Link>
+
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <Link
+                to="/epaper2"
+                className="px-2.5 py-1.5 rounded-full bg-editorialBlue text-cleanWhite text-[10px] sm:text-xs font-semibold tracking-wide hover:bg-editorialBlue/90 transition-all duration-300 shadow-sm hover:shadow-md whitespace-nowrap"
+              >
+                ई-पेपर
+              </Link>
+              <button
+                onClick={() => setIsSubscribeOpen(true)}
+                className="px-2.5 py-1.5 rounded-full bg-newsRed text-cleanWhite text-[10px] sm:text-xs font-semibold tracking-wide hover:bg-newsRed/90 transition-all duration-300 shadow-sm hover:shadow-md whitespace-nowrap"
+              >
+                सबस्क्राईब
+              </button>
+            </div>
+          </div>
+
+          {/* Desktop / Tablet Header - Logo, Date, Buttons (Now First) */}
+          <div className="hidden md:flex items-center justify-between py-2 h-[80px] min-h-[80px]">
+            {/* Left: Date */}
+            <div className="flex items-center">
+              <span className="text-sm text-slateBody font-light tracking-wide">
+                {currentDate}
+              </span>
+            </div>
+
+            {/* Center: Logo */}
+            <Link
+              to="/"
+              className="flex-shrink-0 transform scale-125 md:scale-150 transition-transform duration-300 hover:scale-[1.3] md:hover:scale-[1.55]"
+            >
+              <img
+                src="/logo1.png"
+                alt="नवभारत संवाद"
+                className="h-20 md:h-24 w-auto"
+              />
+            </Link>
+
+            {/* Right: E-Paper and Subscribe */}
+            <div className="flex items-center space-x-3">
+              <Link
+                to="/epaper2"
+                className="bg-editorialBlue text-cleanWhite px-5 py-2 text-sm font-semibold uppercase tracking-wider hover:bg-editorialBlue/80 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 rounded-full"
+              >
+                ई-पेपर
+              </Link>
+              <button
+                onClick={() => setIsSubscribeOpen(true)}
+                className="bg-newsRed text-cleanWhite px-5 py-2 text-sm font-semibold uppercase tracking-wider hover:bg-newsRed/80 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 rounded-full"
+              >
+                सबस्क्राईब करा
+              </button>
+            </div>
+          </div>
+
+          {/* Top Info Bar - Desktop (Now Second) */}
           <div className="hidden md:flex items-center justify-between py-2.5 px-4 bg-gradient-to-r from-subtleGray/40 to-subtleGray/20 border-b border-subtleGray/60">
             <div className="flex items-center gap-6 text-xs">
               <div className="flex items-center gap-2">
@@ -102,7 +172,7 @@ const Header = () => {
             </a>
           </div>
 
-          {/* Top Info Bar - Mobile */}
+          {/* Top Info Bar - Mobile (Now Second) */}
           <div className="md:hidden py-2 px-3 bg-gradient-to-r from-subtleGray/40 to-subtleGray/20 border-b border-subtleGray/60">
             <div className="flex flex-col gap-1.5 text-[10px]">
               <div className="flex items-center justify-between flex-wrap gap-1">
@@ -140,76 +210,6 @@ const Header = () => {
                   <span className="text-[9px] font-bold text-deepCharcoal">{stats.hitsToday.toLocaleString('en-IN')}</span>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Mobile Header */}
-          <div className="flex items-center justify-between py-2.5 md:hidden gap-2">
-            <div className="flex flex-col min-w-0 flex-shrink">
-              <span className="text-[10px] text-metaGray leading-tight whitespace-nowrap">
-                {currentDate}
-              </span>
-            </div>
-
-            <Link to="/" className="flex-shrink-0 mx-auto">
-              <img
-                src="/logo1.png"
-                alt="नवभारत संवाद"
-                className="h-16 sm:h-20 w-auto"
-              />
-            </Link>
-
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              <Link
-                to="/epaper2"
-                className="px-2.5 py-1.5 rounded-full bg-editorialBlue text-cleanWhite text-[10px] sm:text-xs font-semibold tracking-wide hover:bg-editorialBlue/90 transition-all duration-300 shadow-sm hover:shadow-md whitespace-nowrap"
-              >
-                ई-पेपर
-              </Link>
-              <button
-                onClick={() => setIsSubscribeOpen(true)}
-                className="px-2.5 py-1.5 rounded-full bg-newsRed text-cleanWhite text-[10px] sm:text-xs font-semibold tracking-wide hover:bg-newsRed/90 transition-all duration-300 shadow-sm hover:shadow-md whitespace-nowrap"
-              >
-                सबस्क्राईब
-              </button>
-            </div>
-          </div>
-
-          {/* Desktop / Tablet Header */}
-          <div className="hidden md:flex items-center justify-between py-2 h-[80px] min-h-[80px]">
-            {/* Left: Date */}
-            <div className="flex items-center">
-              <span className="text-sm text-slateBody font-light tracking-wide">
-                {currentDate}
-              </span>
-            </div>
-
-            {/* Center: Logo */}
-            <Link
-              to="/"
-              className="flex-shrink-0 transform scale-125 md:scale-150 transition-transform duration-300 hover:scale-[1.3] md:hover:scale-[1.55]"
-            >
-              <img
-                src="/logo1.png"
-                alt="नवभारत संवाद"
-                className="h-20 md:h-24 w-auto"
-              />
-            </Link>
-
-            {/* Right: E-Paper and Subscribe */}
-            <div className="flex items-center space-x-3">
-              <Link
-                to="/epaper2"
-                className="bg-editorialBlue text-cleanWhite px-5 py-2 text-sm font-semibold uppercase tracking-wider hover:bg-editorialBlue/80 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 rounded-full"
-              >
-                ई-पेपर
-              </Link>
-              <button
-                onClick={() => setIsSubscribeOpen(true)}
-                className="bg-newsRed text-cleanWhite px-5 py-2 text-sm font-semibold uppercase tracking-wider hover:bg-newsRed/80 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 rounded-full"
-              >
-                सबस्क्राईब करा
-              </button>
             </div>
           </div>
         </div>

@@ -85,7 +85,7 @@ const BreakingNewsTicker = () => {
     
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % breakingNews.length);
-    }, 5000); // Change news every 5 seconds
+    }, 5001); // Change news every 5 seconds
 
     return () => clearInterval(interval);
   }, [breakingNews.length]);
@@ -132,7 +132,7 @@ const BreakingNewsTicker = () => {
           <div className="flex items-center gap-1.5 sm:gap-2 bg-red-800/90 px-2 sm:px-3 md:px-5 h-full flex-shrink-0 border-r border-red-700/50">
             <FaFire className="text-cleanWhite text-xs sm:text-sm md:text-base animate-pulse flex-shrink-0" />
             <span className="text-cleanWhite font-bold text-[10px] sm:text-xs md:text-sm uppercase tracking-wider whitespace-nowrap hidden sm:inline">
-              ताज्या बातम्या
+              न्यूज फ्लॅश
             </span>
             <span className="text-cleanWhite font-bold text-[10px] uppercase tracking-wider whitespace-nowrap sm:hidden">
               ताज्या
