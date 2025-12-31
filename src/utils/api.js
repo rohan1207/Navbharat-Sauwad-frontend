@@ -32,10 +32,11 @@ export const apiFetch = async (endpoint, options = {}) => {
 
   const path = endpoint && endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   
-  // Reduced timeout for faster newspaper loading (3 seconds instead of 5)
-  const timeout = fetchOptions.timeout || 3000;
+  // Increased timeout for better reliability (10 seconds for most requests, 15 for critical)
+  // Only use timeout for non-critical requests, let critical ones take longer
+  const timeout = fetchOptions.timeout || (fetchOptions.critical ? 15000 : 10000);
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const timeoutId = timeout ? setTimeout(() => controller.abort(), timeout) : null;
   
   try {
     const res = await fetch(`${API_BASE}${path}`, { 
@@ -44,9 +45,14 @@ export const apiFetch = async (endpoint, options = {}) => {
       body: body || fetchOptions.body,
       signal: controller.signal
     });
-    clearTimeout(timeoutId);
+    if (timeoutId) clearTimeout(timeoutId);
 
     if (!res.ok) {
+      // Don't throw for 404 or 500 - return null to allow fallback
+      if (res.status === 404 || res.status >= 500) {
+        return null;
+      }
+      
       let errorBody = null;
       try {
         errorBody = await res.json();
@@ -66,6 +72,10 @@ export const apiFetch = async (endpoint, options = {}) => {
     let data;
     if (contentType.includes('application/json')) {
       data = await res.json();
+    } else if (contentType.includes('text/html')) {
+      // If we get HTML instead of JSON, server might be returning error page
+      console.warn(`Received HTML instead of JSON for ${endpoint}`);
+      return null;
     } else {
       data = await res.text();
     }
@@ -77,11 +87,18 @@ export const apiFetch = async (endpoint, options = {}) => {
 
     return data;
   } catch (error) {
-    clearTimeout(timeoutId);
+    if (timeoutId) clearTimeout(timeoutId);
     if (error.name === 'AbortError') {
-      throw new Error('Request timeout: Server is not responding');
+      // Don't throw timeout errors - return null to allow graceful fallback
+      console.warn(`Request timeout for ${endpoint} - using fallback or cached data`);
+      return null;
     }
-    throw error;
+    // For other errors, only throw if it's a critical request
+    if (fetchOptions.critical) {
+      throw error;
+    }
+    // For non-critical requests, return null to allow fallback
+    return null;
   }
 };
 
@@ -153,12 +170,25 @@ export const getCategories = async () => {
     return cached;
   }
 
-  const data = await fetchWithFallback('/admin/categories', 'categories');
-  
-  if (data && data.data) {
-    // Cache the result
-    apiCache.set('/admin/categories', {}, data.data);
-    return data.data;
+  try {
+    const data = await apiFetch('/admin/categories', {
+      timeout: 12000, // 12 second timeout for critical data
+      critical: true,
+      useCache: true,
+      cacheTTL: 10 * 60 * 1000
+    });
+    
+    if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
+      // Cache the result
+      apiCache.set('/admin/categories', {}, data.data);
+      return data.data;
+    } else if (data && Array.isArray(data) && data.length > 0) {
+      // Cache the result
+      apiCache.set('/admin/categories', {}, data);
+      return data;
+    }
+  } catch (error) {
+    // Silently fail - will use fallback
   }
   
   // Fallback to JSON structure
@@ -188,41 +218,27 @@ export const getArticlesByCategory = async (categoryId) => {
     return cached;
   }
 
-  // Try API first with timeout
+  // Try API first with longer timeout (non-blocking, fails gracefully)
   try {
-    // Add timeout (3 seconds for category articles)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    // Use longer timeout (10 seconds) and don't block if it fails
+    const response = await apiFetch(`/articles?category=${catId}&status=published&limit=50`, {
+      timeout: 10000,
+      useCache: true,
+      cacheTTL: 5 * 60 * 1000 // 5 min cache for category articles
+    });
     
-    try {
-      const response = await fetch(`${API_BASE}/articles?category=${catId}&status=published&limit=50`, {
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data && data.data && data.data.length > 0) {
-          // Cache the result
-          apiCache.set(cacheKey, {}, data.data);
-          console.log(`✅ Loaded ${data.data.length} articles for category ${catId} from API`);
-          return data.data;
-        } else {
-          console.log(`⚠️ No articles found for category ${catId} in API`);
-        }
-      } else {
-        console.warn(`API returned ${response.status} for category ${catId}`);
-      }
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      if (fetchError.name === 'AbortError') {
-        console.warn(`Timeout loading articles for category ${catId}`);
-      } else {
-        throw fetchError;
-      }
+    if (response && Array.isArray(response) && response.length > 0) {
+      // Cache the result
+      apiCache.set(cacheKey, {}, response);
+      return response;
+    } else if (response && response.data && Array.isArray(response.data) && response.data.length > 0) {
+      // Cache the result
+      apiCache.set(cacheKey, {}, response.data);
+      return response.data;
     }
   } catch (error) {
-    console.warn('API fetch failed for category articles:', error);
+    // Silently fail - will use fallback below
+    // Don't log errors for category articles as they're loaded in background
   }
   
   // Fallback to JSON
@@ -304,12 +320,25 @@ export const getFeaturedArticles = async () => {
     return cached;
   }
 
-  const data = await fetchWithFallback('/articles?isFeatured=true&status=published&limit=5', null);
-  
-  if (data && data.data) {
-    // Cache the result
-    apiCache.set('/articles?isFeatured=true&status=published&limit=5', {}, data.data);
-    return data.data;
+  try {
+    const data = await apiFetch('/articles?isFeatured=true&status=published&limit=5', {
+      timeout: 12000, // 12 second timeout for critical data
+      critical: true,
+      useCache: true,
+      cacheTTL: 3 * 60 * 1000
+    });
+    
+    if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
+      // Cache the result
+      apiCache.set('/articles?isFeatured=true&status=published&limit=5', {}, data.data);
+      return data.data;
+    } else if (data && Array.isArray(data) && data.length > 0) {
+      // Cache the result
+      apiCache.set('/articles?isFeatured=true&status=published&limit=5', {}, data);
+      return data;
+    }
+  } catch (error) {
+    // Silently fail - will use fallback
   }
   
   // Fallback - get first article from each category
@@ -350,22 +379,28 @@ export const getLatestArticles = async (limit = 10) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE}/articles?status=published&limit=${limit}&sort=publishedAt:desc`);
+    // Use apiFetch with longer timeout for critical data
+    const data = await apiFetch(`/articles?status=published&limit=${limit}&sort=publishedAt:desc`, {
+      timeout: 12000, // 12 second timeout for critical data
+      critical: true, // Mark as critical
+      useCache: true,
+      cacheTTL: 2 * 60 * 1000
+    });
     
-    if (response.ok) {
-      const data = await response.json();
-      if (data && data.data && data.data.length > 0) {
-        // Cache the result
-        apiCache.set(cacheKey, {}, data.data);
-        return data.data;
-      }
+    if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
+      // Cache the result
+      apiCache.set(cacheKey, {}, data.data);
+      return data.data;
+    } else if (data && Array.isArray(data) && data.length > 0) {
+      // Cache the result
+      apiCache.set(cacheKey, {}, data);
+      return data;
     }
   } catch (error) {
-    console.warn('API fetch failed for latest articles:', error);
+    // Silently fail - will use fallback
   }
   
   // Fallback - get recent articles from JSON
-  console.warn('⚠️ Using fallback data for latest articles');
   const fallback = await loadFallbackData();
   if (fallback && fallback.categories) {
     const allArticles = [];
@@ -392,6 +427,160 @@ export const getLatestArticles = async (limit = 10) => {
     return allArticles
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, limit);
+  }
+  
+  return [];
+};
+
+// Helper function to clear "most read" cache when views are incremented
+export const clearMostReadCache = () => {
+  // Clear cache for different limit values
+  apiCache.clear('/articles', { status: 'published', limit: '5', sort: 'views:desc' });
+  apiCache.clear('/articles', { status: 'published', limit: '10', sort: 'views:desc' });
+  apiCache.clear('/articles', { status: 'published', limit: '20', sort: 'views:desc' });
+};
+
+// Get most read articles (sorted by views)
+export const getMostReadArticles = async (limit = 5) => {
+  const cacheKey = `/articles?status=published&limit=${limit}&sort=views:desc`;
+  const cached = apiCache.get(cacheKey, {}, 1 * 60 * 1000); // Reduced to 1 min cache for faster updates
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const data = await apiFetch(`/articles?status=published&limit=${limit}&sort=views:desc`, {
+      timeout: 10000,
+      useCache: false, // Don't use cache here, we'll set it manually
+      cacheTTL: 1 * 60 * 1000 // 1 min cache
+    });
+    
+    if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
+      apiCache.set(cacheKey, {}, data.data);
+      return data.data;
+    } else if (data && Array.isArray(data) && data.length > 0) {
+      apiCache.set(cacheKey, {}, data);
+      return data;
+    }
+  } catch (error) {
+    // Silently fail - will use fallback
+  }
+  
+  // Fallback - sort by views if available
+  const fallback = await loadFallbackData();
+  if (fallback && fallback.categories) {
+    const allArticles = [];
+    fallback.categories.forEach(category => {
+      if (category.news) {
+        category.news.forEach(article => {
+          allArticles.push({
+            _id: article.id,
+            id: article.id,
+            title: article.title,
+            summary: article.summary,
+            content: article.content,
+            image: article.image,
+            featuredImage: article.image,
+            date: article.date,
+            createdAt: article.date,
+            author: article.author ? { name: article.author } : null,
+            views: article.views || Math.floor(Math.random() * 1000) // Random views for fallback
+          });
+        });
+      }
+    });
+    // Sort by views descending
+    return allArticles
+      .sort((a, b) => (b.views || 0) - (a.views || 0))
+      .slice(0, limit);
+  }
+  
+  return [];
+};
+
+// Get popular articles (sorted by views, but different from most read - could be recent popular)
+export const getPopularArticles = async (limit = 5) => {
+  const cacheKey = `/articles?status=published&limit=${limit * 2}&sort=views:desc`;
+  const cached = apiCache.get(cacheKey, {}, 5 * 60 * 1000); // 5 min cache
+  if (cached) {
+    // Filter to get articles from last 7 days that are popular
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const recentPopular = cached.filter(article => {
+      const articleDate = new Date(article.publishedAt || article.createdAt || article.date);
+      return articleDate >= weekAgo;
+    });
+    if (recentPopular.length >= limit) {
+      return recentPopular.slice(0, limit);
+    }
+    // If not enough recent popular, return top viewed overall
+    return cached.slice(0, limit);
+  }
+
+  try {
+    // Get more articles to filter for recent popular ones
+    const data = await apiFetch(`/articles?status=published&limit=${limit * 2}&sort=views:desc`, {
+      timeout: 10000,
+      useCache: true,
+      cacheTTL: 5 * 60 * 1000
+    });
+    
+    let articles = [];
+    if (data && data.data && Array.isArray(data.data)) {
+      articles = data.data;
+    } else if (data && Array.isArray(data)) {
+      articles = data;
+    }
+    
+    if (articles.length > 0) {
+      // Filter for articles from last 7 days
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      const recentPopular = articles.filter(article => {
+        const articleDate = new Date(article.publishedAt || article.createdAt || article.date);
+        return articleDate >= weekAgo;
+      });
+      
+      if (recentPopular.length >= limit) {
+        apiCache.set(cacheKey, {}, recentPopular.slice(0, limit));
+        return recentPopular.slice(0, limit);
+      }
+      
+      // If not enough recent popular, return top viewed overall
+      const result = articles.slice(0, limit);
+      apiCache.set(cacheKey, {}, result);
+      return result;
+    }
+  } catch (error) {
+    // Silently fail - will use fallback
+  }
+  
+  // Fallback
+  const fallback = await loadFallbackData();
+  if (fallback && fallback.categories) {
+    const allArticles = [];
+    fallback.categories.forEach(category => {
+      if (category.news) {
+        category.news.forEach(article => {
+          allArticles.push({
+            _id: article.id,
+            id: article.id,
+            title: article.title,
+            summary: article.summary,
+            content: article.content,
+            image: article.image,
+            featuredImage: article.image,
+            date: article.date,
+            createdAt: article.date,
+            author: article.author ? { name: article.author } : null,
+            views: article.views || Math.floor(Math.random() * 500)
+          });
+        });
+      }
+    });
+    // Sort by views and get recent ones
+    const sorted = allArticles.sort((a, b) => (b.views || 0) - (a.views || 0));
+    return sorted.slice(0, limit);
   }
   
   return [];
@@ -434,6 +623,9 @@ export default {
   getArticle,
   getFeaturedArticles,
   getLatestArticles,
+  getMostReadArticles,
+  getPopularArticles,
   getBreakingNews,
-  getShorts
+  getShorts,
+  clearMostReadCache
 };

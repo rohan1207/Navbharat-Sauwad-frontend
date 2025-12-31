@@ -6,6 +6,7 @@ export const HeaderProvider = ({ children }) => {
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [breakingNewsHeight, setBreakingNewsHeight] = useState(44); // Default mobile height
   const headerRef = useRef(null);
 
   // Measure actual header height
@@ -95,7 +96,7 @@ export const HeaderProvider = ({ children }) => {
   }, [lastScrollY]);
 
   return (
-    <HeaderContext.Provider value={{ isHeaderVisible, headerHeight, headerRef }}>
+    <HeaderContext.Provider value={{ isHeaderVisible, headerHeight, headerRef, breakingNewsHeight, setBreakingNewsHeight }}>
       {children}
     </HeaderContext.Provider>
   );

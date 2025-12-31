@@ -18,13 +18,13 @@ const ContactRibbon = () => {
 
             {/* Phone Number */}
             <a
-              href="tel:+919529178275"
+              href="tel:+919158578008"
               className="flex items-center gap-1.5 text-cleanWhite hover:text-yellow-200 transition-colors duration-200 group"
             >
               <FaPhone className="text-xs md:text-sm group-hover:scale-105 transition-transform duration-200" />
               <span className="text-xs md:text-sm font-medium whitespace-nowrap">
                 <span className="hidden sm:inline">मो. नं.: </span>
-                <span className="font-semibold">9529178275</span>
+                <span className="font-semibold">९१५८५७८००८</span>
               </span>
             </a>
 
@@ -40,12 +40,12 @@ const ContactRibbon = () => {
               </span>
             </a>
 
-            {/* WhatsApp Link */}
+            {/* WhatsApp Link - Robust for all platforms (wa.me works on iOS, Android, Desktop) */}
             <a
-              href="https://wa.me/919529178275"
+              href="https://wa.me/919158578008"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 bg-green-500/90 hover:bg-green-500 text-cleanWhite px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200 shadow-sm hover:shadow"
+              className="flex items-center gap-1.5 bg-green-500/90 hover:bg-green-500 text-cleanWhite px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200 shadow-sm hover:shadow cursor-pointer"
             >
               <FaWhatsapp className="text-xs md:text-sm" />
               <span className="hidden sm:inline">WhatsApp</span>

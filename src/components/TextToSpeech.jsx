@@ -3,30 +3,26 @@ import React, { useState, useEffect, useRef } from 'react';
 const TextToSpeech = ({ article }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Prevent multiple clicks
   const [currentLanguage, setCurrentLanguage] = useState('mr'); // Marathi
   const audioRef = useRef(null);
+  const isProcessingRef = useRef(false); // Additional guard against parallel instances
 
-  // Extract all text from article
+  // Extract text from article - only title and content (subtitle and summary removed)
   const extractArticleText = () => {
     if (!article) return '';
     
     let fullText = '';
     
+    // Add title if exists
     if (article.title) {
       fullText += article.title + '. ';
     }
     
-    if (article.subtitle) {
-      fullText += article.subtitle + '. ';
-    }
-    
-    if (article.summary) {
-      fullText += article.summary + '. ';
-    }
-    
+    // Add content (subtitle and summary are no longer used)
     if (article.content) {
       if (typeof article.content === 'string' && (article.content.includes('<') || article.content.includes('&'))) {
-        // HTML content
+        // HTML content - strip HTML tags
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = article.content;
         const textContent = tempDiv.textContent || tempDiv.innerText || '';
@@ -42,6 +38,15 @@ const TextToSpeech = ({ article }) => {
 
   // Google Translate TTS via backend proxy - Free and reliable
   const speakWithGoogleTTS = async (text, lang = 'mr') => {
+    // Prevent multiple instances
+    if (isProcessingRef.current) {
+      console.warn('TTS already processing, ignoring duplicate request');
+      return;
+    }
+    
+    isProcessingRef.current = true;
+    setIsLoading(true);
+    
     try {
       // Split text at sentence boundaries (full stops) instead of fixed chunks
       const sentences = text.split(/([।.!?।]+)/).filter(s => s.trim().length > 0);
@@ -136,6 +141,9 @@ const TextToSpeech = ({ article }) => {
           setTimeout(() => {
             if (!isPaused) {
               playNextChunk();
+            } else {
+              // If paused, reset processing flag
+              isProcessingRef.current = false;
             }
           }, 200); // Increased delay to avoid rate limiting
         };
@@ -147,6 +155,8 @@ const TextToSpeech = ({ article }) => {
       audio.onplay = () => {
         setIsPlaying(true);
         setIsPaused(false);
+        setIsLoading(false);
+        isProcessingRef.current = false; // Allow new requests after playback starts
       };
 
       audio.onpause = () => {
@@ -155,21 +165,43 @@ const TextToSpeech = ({ article }) => {
         }
       };
 
+      audio.onended = () => {
+        // If all chunks are done, reset states
+        if (currentChunkIndex >= audioUrls.length) {
+          setIsPlaying(false);
+          setIsPaused(false);
+          setIsLoading(false);
+          isProcessingRef.current = false;
+        }
+      };
+
       playNextChunk();
     } catch (error) {
       console.error('TTS Error:', error);
       setIsPlaying(false);
       setIsPaused(false);
+      setIsLoading(false);
+      isProcessingRef.current = false;
       alert('Error playing audio. Please try again.');
     }
   };
 
   const speak = () => {
+    // Prevent if already processing
+    if (isProcessingRef.current || isLoading) {
+      return;
+    }
+    
     const text = extractArticleText();
     if (!text || text.trim().length === 0) {
       alert('No content available to read.');
       return;
     }
+
+    // Optimistically set playing state immediately for instant UI feedback
+    setIsPlaying(true);
+    setIsPaused(false);
+    setIsLoading(true);
 
     // Try Marathi first, fallback to Hindi, then English
     const lang = currentLanguage === 'mr' ? 'mr' : currentLanguage === 'hi' ? 'hi' : 'en';
@@ -177,16 +209,26 @@ const TextToSpeech = ({ article }) => {
   };
 
   const pause = () => {
-    if (audioRef.current && isPlaying) {
+    if (audioRef.current && (isPlaying || isLoading)) {
       audioRef.current.pause();
       setIsPaused(true);
+      setIsPlaying(false);
+      setIsLoading(false);
+      isProcessingRef.current = false;
     }
   };
 
   const resume = () => {
     if (audioRef.current && isPaused) {
+      isProcessingRef.current = true;
+      setIsLoading(true);
       audioRef.current.playbackRate = 1.2; // Maintain speed (slightly faster)
-      audioRef.current.play();
+      audioRef.current.play().catch(err => {
+        console.error('Error resuming audio:', err);
+        setIsPaused(true);
+        setIsLoading(false);
+        isProcessingRef.current = false;
+      });
       setIsPaused(false);
     }
   };
@@ -197,12 +239,19 @@ const TextToSpeech = ({ article }) => {
       audioRef.current.currentTime = 0;
       setIsPlaying(false);
       setIsPaused(false);
+      setIsLoading(false);
+      isProcessingRef.current = false;
     }
   };
 
   const handlePlayPause = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Prevent clicks while loading or processing
+    if (isLoading || isProcessingRef.current) {
+      return;
+    }
     
     if (!isPlaying && !isPaused) {
       speak();
@@ -228,10 +277,23 @@ const TextToSpeech = ({ article }) => {
       type="button"
       onClick={handlePlayPause}
       onMouseDown={(e) => e.preventDefault()}
-      className="flex items-center justify-center space-x-2 px-4 py-2 rounded-lg border border-newsRed/30 text-newsRed hover:bg-newsRed hover:text-cleanWhite transition-all duration-200 font-medium text-sm cursor-pointer z-10 relative"
+      disabled={isLoading || isProcessingRef.current}
+      className={`flex items-center justify-center space-x-2 px-4 py-2 rounded-lg border border-newsRed/30 text-newsRed hover:bg-newsRed hover:text-cleanWhite font-medium text-sm z-10 relative ${
+        isLoading || isProcessingRef.current 
+          ? 'opacity-70 cursor-wait' 
+          : 'cursor-pointer transition-colors duration-75'
+      }`}
       style={{ pointerEvents: 'auto' }}
     >
-      {isPaused ? (
+      {isLoading ? (
+        <>
+          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>लोड होत आहे...</span>
+        </>
+      ) : isPaused ? (
         <>
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />

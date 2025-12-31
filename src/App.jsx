@@ -8,6 +8,7 @@ import ContactRibbon from './components/ContactRibbon';
 import MainContent from './components/MainContent';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
+import ScrollToTopOnRouteChange from './components/ScrollToTopOnRouteChange';
 
 import Home from './pages/Home';
 import CategoryPage from './pages/CategoryPage';
@@ -25,6 +26,7 @@ import Events from './pages/Events';
 function App() {
   return (
     <Router>
+      <ScrollToTopOnRouteChange />
       <HeaderProvider>
         <div className="min-h-screen flex flex-col">
           <Header />

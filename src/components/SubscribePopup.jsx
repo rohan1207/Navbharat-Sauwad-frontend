@@ -79,9 +79,27 @@ const SubscribePopup = ({ isOpen, onClose }) => {
 
     setIsSubmitting(true);
     
-    // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+      
+      const response = await fetch(`${API_BASE}/subscribers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.replace(/\s/g, '')
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Subscription failed');
+      }
+
       setIsSuccess(true);
       
       // Close popup after 2 seconds
@@ -90,6 +108,9 @@ const SubscribePopup = ({ isOpen, onClose }) => {
       }, 2000);
     } catch (error) {
       console.error('Subscription error:', error);
+      setErrors({ 
+        submit: error.message || 'सबस्क्रिप्शन करताना त्रुटी आली. कृपया पुन्हा प्रयत्न करा.' 
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -213,6 +234,9 @@ const SubscribePopup = ({ isOpen, onClose }) => {
                 >
                   {isSubmitting ? 'सबमिट करत आहे...' : 'सबस्क्राईब करा'}
                 </button>
+                {errors.submit && (
+                  <p className="mt-2 text-xs text-red-500 text-center">{errors.submit}</p>
+                )}
               </form>
             </>
           ) : (

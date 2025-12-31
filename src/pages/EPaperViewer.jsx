@@ -97,16 +97,24 @@ const EPaperViewer = () => {
   };
 
   // Use backend URL for sharing so crawlers get proper meta tags
-  // Prefer slug over ID for better SEO
+  // Use IDs for cleaner URLs (avoid encoded characters)
   const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navbharat-sauwad-backend.onrender.com';
-  let sharePath = window.location.pathname;
   
-  // Replace ID with slug if available
-  if (epaper && epaper.slug && sharePath.includes(`/epaper/${id}`)) {
-    sharePath = sharePath.replace(`/epaper/${id}`, `/epaper/${epaper.slug}`);
+  // Build clean URL with ID
+  let epaperIdentifier;
+  if (epaper) {
+    if (epaper.id !== undefined && epaper.id !== null) {
+      epaperIdentifier = String(epaper.id);
+    } else if (epaper._id) {
+      epaperIdentifier = String(epaper._id);
+    } else {
+      epaperIdentifier = id; // Fallback
+    }
+  } else {
+    epaperIdentifier = id;
   }
   
-  const shareUrl = `${backendBase}${sharePath}${window.location.search}`;
+  const shareUrl = `${backendBase}/epaper/${epaperIdentifier}${window.location.search}`;
   
   // Clean title - remove "Untitled" and empty titles
   const getCleanEpaperTitle = () => {
@@ -156,35 +164,35 @@ const EPaperViewer = () => {
       />
       <div className="min-h-screen bg-subtleGray">
         {/* Header */}
-        <div className="bg-cleanWhite border-b-2 border-subtleGray py-4 sticky top-0 z-40 shadow-sm">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-deepCharcoal">{getCleanEpaperTitle()}</h1>
-                <p className="text-sm text-metaGray mt-1">{epaper.date}</p>
+        <div className="bg-cleanWhite border-b-2 border-subtleGray py-3 sm:py-4 sticky top-0 z-40 shadow-sm">
+          <div className="container mx-auto px-3 sm:px-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-deepCharcoal leading-tight">{getCleanEpaperTitle()}</h1>
+                <p className="text-xs sm:text-sm text-metaGray mt-1">{epaper.date}</p>
               </div>
-            <div className="flex items-center gap-3">
-              <ShareButtons
-                title={shareTitle}
-                description={shareDescription}
-                image={shareImage}
-                url={shareUrl}
-              />
-              <Link
-                to="/epaper2"
-                className="text-metaGray hover:text-deepCharcoal transition-colors font-semibold"
-              >
-                मागे जा
-              </Link>
+              <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                <ShareButtons
+                  title={shareTitle}
+                  description={shareDescription}
+                  image={shareImage}
+                  url={shareUrl}
+                />
+                <Link
+                  to="/epaper2"
+                  className="text-xs sm:text-sm text-metaGray hover:text-deepCharcoal transition-colors font-semibold whitespace-nowrap"
+                >
+                  मागे जा
+                </Link>
+              </div>
             </div>
           </div>
         </div>
-        </div>
 
         {/* Main Content */}
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex gap-6">
-            {/* Left Sidebar - Page Thumbnails */}
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+          <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
+            {/* Left Sidebar - Page Thumbnails (Desktop only) */}
             <div className="hidden lg:block w-32 flex-shrink-0">
               <div className="bg-cleanWhite rounded-lg border border-subtleGray p-3 sticky top-24">
                 {/* Scroll Up Button */}
@@ -233,16 +241,33 @@ const EPaperViewer = () => {
               </div>
             </div>
 
-            {/* Main Content Area */}
+            {/* Main Content Area - Desktop: single page, Mobile: all pages stacked */}
             <div ref={mainContentRef} className="flex-1">
-              {selectedPage && (
-                <div className="bg-cleanWhite rounded-lg border border-subtleGray p-4 md:p-6">
-                  <EPaperPage2
-                    page={selectedPage}
-                    epaperId={id}
-                  />
-                </div>
-              )}
+              {/* Desktop: Show selected page only */}
+              <div className="hidden lg:block">
+                {selectedPage && (
+                  <div className="bg-cleanWhite rounded-lg border border-subtleGray p-4 md:p-6">
+                    <EPaperPage2
+                      page={selectedPage}
+                      epaperId={id}
+                      epaperSlug={epaper?.slug}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile: Show all pages stacked one below other */}
+              <div className="lg:hidden space-y-4 sm:space-y-6">
+                {epaper.pages.map((page, index) => (
+                  <div key={page.pageNo} className="bg-cleanWhite rounded-lg border border-subtleGray p-3 sm:p-4">
+                    <EPaperPage2
+                      page={page}
+                      epaperId={id}
+                      epaperSlug={epaper?.slug}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

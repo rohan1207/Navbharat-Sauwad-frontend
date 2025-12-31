@@ -88,10 +88,12 @@ const EPaper2 = () => {
                       console.warn('Epaper missing ID:', epaper);
                       return null;
                     }
+                    // Use slug if available, otherwise use ID
+                    const epaperIdentifier = epaper.slug || epaperId;
                     return (
                       <Link
                         key={epaperId}
-                        to={`/epaper/${epaperId}`}
+                        to={`/epaper/${epaperIdentifier}`}
                         className="group bg-cleanWhite border border-subtleGray rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 block"
                       >
                         {/* Thumbnail */}

@@ -20,18 +20,27 @@ const HorizontalImageAds = () => {
   useEffect(() => {
     const fetchAds = async () => {
       try {
-        const data = await apiFetch('/ads/active/horizontal-image');
-        if (data && data.length > 0) {
+        const data = await apiFetch('/ads/active/horizontal-image', {
+          timeout: 10000, // 10 second timeout for ads
+          useCache: true,
+          cacheTTL: 5 * 60 * 1000 // 5 min cache
+        });
+        if (data && Array.isArray(data) && data.length > 0) {
           setAds(data);
-          // Track impressions
+          // Track impressions in background (silently fail)
           data.forEach(ad => {
             if (ad._id) {
-              apiFetch(`/ads/${ad._id}/impression`, { method: 'POST' }).catch(console.error);
+              apiFetch(`/ads/${ad._id}/impression`, { 
+                method: 'POST',
+                timeout: 5000 // Short timeout for tracking
+              }).catch(() => {
+                // Silently fail - tracking is not critical
+              });
             }
           });
         }
       } catch (error) {
-        console.error('Error fetching horizontal image ads:', error);
+        // Silently fail - ads are not critical
       }
     };
     fetchAds();
@@ -211,59 +220,79 @@ const Home = () => {
           setShorts(newsData.shorts || []);
         }
 
-        // Fetch horizontal video ads in background (non-blocking)
-        apiFetch('/ads/active/horizontal-video', { useCache: true, cacheTTL: 5 * 60 * 1000 })
+        // Fetch horizontal video ads in background (non-blocking, no errors)
+        apiFetch('/ads/active/horizontal-video', { 
+          useCache: true, 
+          cacheTTL: 5 * 60 * 1000,
+          timeout: 10000 // 10 second timeout for ads
+        })
           .then(adsData => {
-            if (adsData && adsData.length > 0) {
+            if (adsData && Array.isArray(adsData) && adsData.length > 0) {
               setHorizontalAds(adsData);
-              // Track impressions in background
+              // Track impressions in background (silently fail)
               adsData.forEach(ad => {
                 if (ad._id) {
-                  apiFetch(`/ads/${ad._id}/impression`, { method: 'POST', useCache: false }).catch(console.error);
+                  apiFetch(`/ads/${ad._id}/impression`, { 
+                    method: 'POST', 
+                    useCache: false,
+                    timeout: 5000 // Short timeout for tracking
+                  }).catch(() => {
+                    // Silently fail - tracking is not critical
+                  });
                 }
               });
             }
           })
-          .catch(error => {
-            console.error('Error fetching horizontal ads:', error);
+          .catch(() => {
+            // Silently fail - ads are not critical
           });
 
         // Load category articles for popular - PARALLELIZED and optimized
         // Use cached data from latest if available, load categories in background
         const allArticles = [...(latest || [])];
         
-        // Load popular articles in background (non-blocking)
+        // Set initial popular articles from latest (non-blocking)
+        setPopularArticles(allArticles.slice(0, 10));
+        
+        // Load popular articles in background (non-blocking, no errors thrown)
         if (cats && cats.length > 0) {
-          // Only load top 3 categories for popular section to reduce API calls
+          // Only load top 2 categories for popular section to reduce API calls
           Promise.allSettled(
-            cats.slice(0, 3).map(async (cat) => {
+            cats.slice(0, 2).map(async (cat) => {
               try {
                 const catId = cat.id || cat._id;
                 const catArticles = await getArticlesByCategory(catId);
-                return catArticles.slice(0, 2);
+                return catArticles ? catArticles.slice(0, 2) : [];
               } catch (error) {
-                console.warn(`Failed to load articles for category ${cat.id}:`, error);
+                // Silently fail - don't log errors for background loading
                 return [];
               }
             })
           ).then(categoryResults => {
             const articles = [];
             categoryResults.forEach(result => {
-              if (result.status === 'fulfilled' && result.value) {
+              if (result.status === 'fulfilled' && result.value && Array.isArray(result.value)) {
                 articles.push(...result.value);
               }
             });
-            setPopularArticles([...allArticles, ...articles].slice(0, 10));
+            // Update popular articles if we got new ones
+            if (articles.length > 0) {
+              setPopularArticles([...allArticles, ...articles].slice(0, 10));
+            }
+          }).catch(() => {
+            // Silently fail - keep initial popular articles
           });
         } else {
           // Fallback
           const fallbackArticles = [];
-          newsData.categories.slice(0, 3).forEach(cat => {
+          newsData.categories.slice(0, 2).forEach(cat => {
             if (cat.news) {
               fallbackArticles.push(...cat.news.slice(0, 2));
             }
           });
-          setPopularArticles([...allArticles, ...fallbackArticles].slice(0, 10));
+          if (fallbackArticles.length > 0) {
+            setPopularArticles([...allArticles, ...fallbackArticles].slice(0, 10));
+          }
         }
 
       } catch (error) {
@@ -289,7 +318,7 @@ const Home = () => {
     loadData();
   }, []);
 
-  // Load category articles when categories change - OPTIMIZED
+  // Load category articles when categories change - OPTIMIZED (non-blocking, silent failures)
   useEffect(() => {
     const loadCategoryArticles = async () => {
       if (categories.length === 0 || !allCategories.length) return;
@@ -299,7 +328,8 @@ const Home = () => {
       if (!needsLoading) return;
       
       try {
-        const updatedCategories = await Promise.all(
+        // Load categories in parallel with Promise.allSettled (won't fail if one fails)
+        const updatedCategories = await Promise.allSettled(
           categories.map(async (cat) => {
             // Skip if already has news
             if (cat.news && cat.news.length > 0) return cat;
@@ -327,8 +357,7 @@ const Home = () => {
                 news: articles
               };
             } catch (error) {
-              console.warn(`Error loading articles for category ${cat.id}:`, error);
-              // Return category with fallback data
+              // Silently fail - use fallback data
               const fallbackCat = newsData.categories.find(c => 
                 c.id === (cat.id || cat.nameEn?.toLowerCase().replace(/\s+/g, '-'))
               );
@@ -340,9 +369,16 @@ const Home = () => {
           })
         );
         
-        setCategories(updatedCategories);
+        // Extract successful results
+        const successful = updatedCategories
+          .filter(result => result.status === 'fulfilled')
+          .map(result => result.value);
+        
+        if (successful.length > 0) {
+          setCategories(successful);
+        }
       } catch (error) {
-        console.error('Error loading category articles:', error);
+        // Silently fail - categories will use fallback data
       }
     };
 
@@ -362,7 +398,7 @@ const Home = () => {
       {/* Main Content Area */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-x-6 gap-y-6">
-          {/* Left Sidebar */}
+          {/* Left Sidebar - Show on mobile but restructured */}
           <div className="lg:col-span-2 order-2 lg:order-1">
             <Sidebar type="left" />
           </div>
@@ -415,24 +451,24 @@ const Home = () => {
             <PhotoOfTheDay />
 
             {/* Top Stories Grid - 2 Cards in first row, 3 cards in second row */}
-            <section className="mb-10">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="h-6 w-1 bg-newsRed rounded-full"></div>
-                  <h2 className="text-xl md:text-2xl font-bold text-deepCharcoal">
+            <section className="mb-6 sm:mb-8 md:mb-10">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="h-5 sm:h-6 w-0.5 sm:w-1 bg-newsRed rounded-full"></div>
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-deepCharcoal">
                     शीर्ष बातम्या
                   </h2>
                 </div>
                 <Link
                   to="/category/latest-news"
-                  className="text-sm font-semibold text-newsRed hover:text-newsRed/80 flex items-center gap-1 transition-colors"
+                  className="text-xs sm:text-sm font-semibold text-newsRed hover:text-newsRed/80 flex items-center gap-1 transition-colors"
                 >
                   सर्व पहा
                   <FaArrowRight className="w-3 h-3" />
                 </Link>
               </div>
               {/* First Row - 2 Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
                 {otherNews.slice(0, 2).map((news) => (
                   <Link
                     key={news.id || news._id}
@@ -725,7 +761,7 @@ const Home = () => {
             </section>
           </div>
 
-          {/* Right Sidebar */}
+          {/* Right Sidebar - Show on mobile but restructured */}
           <div className="lg:col-span-2 order-3">
             <Sidebar type="right" />
           </div>

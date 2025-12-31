@@ -72,49 +72,49 @@ const ShareButtons = ({ title, description, image, url }) => {
   };
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
       {/* WhatsApp Share */}
       <button
         onClick={shareWhatsApp}
-        className="flex items-center gap-2 bg-green-500 text-cleanWhite px-4 py-2 rounded-lg hover:bg-green-600 transition-all duration-300 shadow-sm hover:shadow-md"
+        className="flex items-center justify-center gap-1 sm:gap-2 bg-green-500 text-cleanWhite px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-green-600 transition-all duration-300 shadow-sm hover:shadow-md"
         aria-label="WhatsApp वर शेअर करा"
         title="WhatsApp वर शेअर करा"
       >
-        <FaWhatsapp className="w-4 h-4" />
-        <span className="font-semibold text-sm hidden sm:inline">WhatsApp</span>
+        <FaWhatsapp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <span className="font-semibold text-xs sm:text-sm hidden sm:inline">WhatsApp</span>
       </button>
 
       {/* Facebook Share */}
       <button
         onClick={shareFacebook}
-        className="flex items-center gap-2 bg-blue-600 text-cleanWhite px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-300 shadow-sm hover:shadow-md"
+        className="flex items-center justify-center gap-1 sm:gap-2 bg-blue-600 text-cleanWhite px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-blue-700 transition-all duration-300 shadow-sm hover:shadow-md"
         aria-label="Facebook वर शेअर करा"
         title="Facebook वर शेअर करा"
       >
-        <FaFacebook className="w-4 h-4" />
-        <span className="font-semibold text-sm hidden sm:inline">Facebook</span>
+        <FaFacebook className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <span className="font-semibold text-xs sm:text-sm hidden sm:inline">Facebook</span>
       </button>
 
       {/* Twitter Share */}
       <button
         onClick={shareTwitter}
-        className="flex items-center gap-2 bg-sky-500 text-cleanWhite px-4 py-2 rounded-lg hover:bg-sky-600 transition-all duration-300 shadow-sm hover:shadow-md"
+        className="flex items-center justify-center gap-1 sm:gap-2 bg-sky-500 text-cleanWhite px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-sky-600 transition-all duration-300 shadow-sm hover:shadow-md"
         aria-label="Twitter वर शेअर करा"
         title="Twitter वर शेअर करा"
       >
-        <FaTwitter className="w-4 h-4" />
-        <span className="font-semibold text-sm hidden sm:inline">Twitter</span>
+        <FaTwitter className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <span className="font-semibold text-xs sm:text-sm hidden sm:inline">Twitter</span>
       </button>
 
       {/* Copy Link */}
       <button
         onClick={copyLink}
-        className="flex items-center gap-2 bg-subtleGray text-deepCharcoal px-4 py-2 rounded-lg hover:bg-metaGray transition-all duration-300 shadow-sm hover:shadow-md"
+        className="flex items-center justify-center gap-1 sm:gap-2 bg-subtleGray text-deepCharcoal px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-metaGray transition-all duration-300 shadow-sm hover:shadow-md"
         aria-label="लिंक कॉपी करा"
         title="लिंक कॉपी करा"
       >
-        <FaShareAlt className="w-4 h-4" />
-        <span className="font-semibold text-sm hidden sm:inline">कॉपी</span>
+        <FaShareAlt className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <span className="font-semibold text-xs sm:text-sm hidden sm:inline">कॉपी</span>
       </button>
     </div>
   );

@@ -262,9 +262,9 @@ const EPaper = () => {
 
       {/* News Detail Modal */}
       {selectedNews && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeNewsModal}>
+        <div className="fixed inset-0 bg-white  flex items-center justify-center z-50 p-4" onClick={closeNewsModal}>
           <div 
-            className="bg-cleanWhite max-w-6xl w-full max-h-[95vh] overflow-y-auto relative"
+            className="bg-white max-w-6xl w-full max-h-[95vh] overflow-y-auto relative"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Top Logo - No border, no shadow, seamless */}
@@ -272,7 +272,7 @@ const EPaper = () => {
               <img
                 src="/logo1.png"
                 alt="नव मंच"
-                className="h-16 md:h-20 w-auto"
+                className="h-16 md:h-24 w-auto"
               />
             </div>
             
@@ -310,7 +310,7 @@ const EPaper = () => {
               {/* Website URL */}
               <div className="text-center mb-4">
                 <p className="text-xs md:text-sm text-metaGray font-medium tracking-wide">
-                  navmanch.com/epapers
+                  navmanch.com/epaper
                 </p>
               </div>
               

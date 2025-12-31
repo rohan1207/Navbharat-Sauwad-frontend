@@ -8,16 +8,25 @@ const PhotoOfTheDay = () => {
   useEffect(() => {
     const fetchPhoto = async () => {
       try {
-        const data = await apiFetch('/photo-of-the-day/today');
-        if (data) {
+        const data = await apiFetch('/photo-of-the-day/today', {
+          timeout: 10000, // 10 second timeout
+          useCache: true,
+          cacheTTL: 10 * 60 * 1000 // 10 min cache (photo changes daily)
+        });
+        if (data && data.image) {
           setPhoto(data);
-          // Track view
+          // Track view in background (silently fail)
           if (data._id) {
-            apiFetch(`/photo-of-the-day/${data._id}/views`, { method: 'POST' }).catch(console.error);
+            apiFetch(`/photo-of-the-day/${data._id}/views`, { 
+              method: 'POST',
+              timeout: 5000 // Short timeout for tracking
+            }).catch(() => {
+              // Silently fail - tracking is not critical
+            });
           }
         }
       } catch (error) {
-        console.error('Error fetching photo of the day:', error);
+        // Silently fail - photo is not critical
       } finally {
         setLoading(false);
       }

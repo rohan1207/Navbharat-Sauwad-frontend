@@ -67,18 +67,46 @@ const EPaperSection = () => {
         console.log('✅ Found page:', foundPage.pageNo);
         setPage(foundPage);
 
-        // Find section by slug first, then by ID
+        // Log all available sections for debugging
+        console.log('🔍 Looking for section:', sectionId);
+        console.log('📋 Available sections:', foundPage.news?.map(n => ({
+          slug: n.slug,
+          id: n.id,
+          _id: n._id ? String(n._id) : null,
+          title: n.title
+        })));
+
+        // Find section by ID first (most reliable), then by slug, then by _id
+        // IMPORTANT: Check ID first because slugs like "Untitled" are not unique
         const foundSection = foundPage.news?.find(n => {
           const nSlug = n.slug;
-          const nId = n.id;
+          const nId = n.id !== undefined ? n.id : null;
+          const n_id = n._id ? String(n._id) : null;
           const sId = sectionId;
           
-          // Match by slug first
-          if (nSlug && nSlug === sId) return true;
-          
-          // Then match by ID
+          // Match by ID first (most reliable - always unique)
           if (nId !== undefined && nId !== null) {
-            return String(nId) === String(sId) || nId === parseInt(sId) || nId === sId;
+            const match = String(nId) === String(sId) || nId === parseInt(sId) || nId === sId;
+            if (match) {
+              console.log('✅ Matched by id:', nId, '===', sId);
+              return true;
+            }
+          }
+          
+          // Then match by _id (MongoDB ObjectId) - also unique
+          if (n_id) {
+            const match = n_id === String(sId) || String(n_id) === String(sId);
+            if (match) {
+              console.log('✅ Matched by _id:', n_id, '===', sId);
+              return true;
+            }
+          }
+          
+          // Finally match by slug (only if it's meaningful and unique)
+          // Skip if slug is "Untitled" or empty - those are not unique
+          if (nSlug && nSlug.trim() !== '' && nSlug.toLowerCase() !== 'untitled' && nSlug === sId) {
+            console.log('✅ Matched by slug:', nSlug, '===', sId);
+            return true;
           }
           
           return false;
@@ -155,19 +183,39 @@ const EPaperSection = () => {
   };
 
   // Use backend URL for sharing so crawlers get proper meta tags
-  // Prefer slug over ID for better SEO
+  // Use IDs instead of slugs for cleaner URLs (avoid "Untitled" and encoded characters)
   const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navbharat-sauwad-backend.onrender.com';
-  let sharePath = window.location.pathname;
   
-  // Replace IDs with slugs if available
-  if (epaper && epaper.slug && sharePath.includes(`/epaper/${id}`)) {
-    sharePath = sharePath.replace(`/epaper/${id}`, `/epaper/${epaper.slug}`);
-  }
-  if (section && section.slug && sharePath.includes(`/section/${sectionId}`)) {
-    sharePath = sharePath.replace(`/section/${sectionId}`, `/section/${section.slug}`);
+  // Build clean URL with IDs
+  let epaperIdentifier;
+  if (epaper) {
+    // Use ID for e-paper (cleaner than encoded slug)
+    if (epaper.id !== undefined && epaper.id !== null) {
+      epaperIdentifier = String(epaper.id);
+    } else if (epaper._id) {
+      epaperIdentifier = String(epaper._id);
+    } else {
+      epaperIdentifier = id; // Fallback
+    }
+  } else {
+    epaperIdentifier = id;
   }
   
-  const shareUrl = `${backendBase}${sharePath}${window.location.search}`;
+  let sectionIdentifier;
+  if (section) {
+    // Always use ID for sections (never "Untitled" slug)
+    if (section.id !== undefined && section.id !== null) {
+      sectionIdentifier = String(section.id);
+    } else if (section._id) {
+      sectionIdentifier = String(section._id);
+    } else {
+      sectionIdentifier = sectionId; // Fallback
+    }
+  } else {
+    sectionIdentifier = sectionId;
+  }
+  
+  const shareUrl = `${backendBase}/epaper/${epaperIdentifier}/page/${page?.pageNo || '1'}/section/${sectionIdentifier}${window.location.search}`;
   
   // Clean title - remove "Untitled" and empty titles
   const getCleanSectionTitle = () => {
@@ -205,7 +253,8 @@ const EPaperSection = () => {
     return `${window.location.origin}${imgUrl.startsWith('/') ? imgUrl : `/${imgUrl}`}`;
   };
   
-  const shareImage = getAbsoluteImageUrl(croppedImageUrl || page?.image || '');
+  // Use full page image for section share cards (more reliable than cropped section)
+  const shareImage = getAbsoluteImageUrl(page?.image || epaper?.thumbnail || '');
 
   if (loading || !epaper || !page || !section) {
     return (

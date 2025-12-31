@@ -5,7 +5,7 @@ import Sidebar from '../components/Sidebar';
 import TextToSpeech from '../components/TextToSpeech';
 import ShareButtons from '../components/ShareButtons';
 import SEO from '../components/SEO';
-import { getArticle, getCategories } from '../utils/api';
+import { getArticle, getCategories, getArticlesByCategory, clearMostReadCache } from '../utils/api';
 
 const NewsDetail = () => {
   const { id } = useParams();
@@ -13,6 +13,115 @@ const NewsDetail = () => {
   const [news, setNews] = useState(null);
   const [category, setCategory] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [relatedArticles, setRelatedArticles] = useState([]);
+
+  // Separate effect to load related articles after article is loaded
+  useEffect(() => {
+    const loadRelatedArticles = async () => {
+      if (!news) return;
+      
+      // If we have a category, use it; otherwise try to get from news.categoryId
+      const catToUse = category || (news.categoryId ? { _id: news.categoryId?._id || news.categoryId?.id || news.categoryId, id: news.categoryId?.id || news.categoryId } : null);
+      
+      if (!catToUse) {
+        // No category available, try to get latest articles from all categories
+        try {
+          const categories = await getCategories();
+          const allArticles = [];
+          categories.forEach(cat => {
+            if (cat.news && Array.isArray(cat.news)) {
+              allArticles.push(...cat.news);
+            }
+          });
+          
+          const currentId = news._id || news.id || id;
+          const related = allArticles
+            .filter(art => {
+              const artId = art._id || art.id;
+              return artId?.toString() !== currentId?.toString() && artId?.toString() !== id?.toString();
+            })
+            .slice(0, 4);
+          
+          if (related.length > 0) {
+            setRelatedArticles(related);
+          }
+        } catch (error) {
+          console.warn('Error loading fallback articles:', error);
+        }
+        return;
+      }
+      
+      try {
+        const categoryId = catToUse._id || catToUse.id;
+        if (categoryId) {
+          const allCategoryArticles = await getArticlesByCategory(categoryId);
+          if (allCategoryArticles && Array.isArray(allCategoryArticles) && allCategoryArticles.length > 0) {
+            const currentId = news._id || news.id || id;
+            const related = allCategoryArticles
+              .filter(art => {
+                const artId = art._id || art.id;
+                return artId?.toString() !== currentId?.toString() && artId?.toString() !== id?.toString();
+              })
+              .slice(0, 4);
+            
+            if (related.length > 0) {
+              setRelatedArticles(related);
+              return;
+            }
+          }
+        }
+        
+        // Fallback to category news
+        if (catToUse.news && Array.isArray(catToUse.news)) {
+          const currentId = news._id || news.id || id;
+          const related = catToUse.news
+            .filter(art => {
+              const artId = art._id || art.id;
+              return artId?.toString() !== currentId?.toString() && artId?.toString() !== id?.toString();
+            })
+            .slice(0, 4);
+          if (related.length > 0) {
+            setRelatedArticles(related);
+          }
+        }
+      } catch (error) {
+        console.warn('Error loading related articles in useEffect:', error);
+      }
+    };
+    
+    loadRelatedArticles();
+  }, [news?._id || news?.id, category?._id || category?.id, id]);
+
+  // Track article view when article is loaded
+  useEffect(() => {
+    const trackView = async () => {
+      if (!news || !id) return;
+      
+      try {
+        const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+        const articleId = news._id || news.id || id;
+        
+        // Increment views
+        await fetch(`${API_BASE}/articles/${articleId}/views`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        // Clear cache for "most read" articles so they refresh with new view counts
+        clearMostReadCache();
+      } catch (error) {
+        console.warn('Error tracking view:', error);
+        // Don't show error to user - tracking is not critical
+      }
+    };
+    
+    // Track view after a small delay to ensure article is fully loaded
+    const timer = setTimeout(trackView, 500);
+    
+    return () => clearTimeout(timer);
+  }, [news?._id || news?.id, id]);
 
   useEffect(() => {
     const loadArticle = async () => {
@@ -32,18 +141,92 @@ const NewsDetail = () => {
         if (article) {
           setNews(article);
           
-          // Get category if categoryId exists
-          if (article.categoryId) {
+          // Get category if categoryId exists (handle both object and ID)
+          const categoryIdValue = article.categoryId?._id || article.categoryId?.id || article.categoryId;
+          
+          if (categoryIdValue) {
             const categories = await getCategories();
             const foundCategory = categories.find(cat => 
-              (cat.id === article.categoryId) || 
-              (cat._id === article.categoryId) ||
-              (cat._id?.toString() === article.categoryId?.toString())
+              (cat.id === categoryIdValue) || 
+              (cat._id === categoryIdValue) ||
+              (cat._id?.toString() === categoryIdValue?.toString()) ||
+              (cat.id?.toString() === categoryIdValue?.toString())
             );
+            
             if (foundCategory) {
               setCategory(foundCategory);
             }
+            
+              // Load related articles from same category
+              let loadedRelated = [];
+              
+              try {
+                const catId = foundCategory?._id || foundCategory?.id || categoryIdValue;
+                const allCategoryArticles = await getArticlesByCategory(catId);
+                
+                if (allCategoryArticles && Array.isArray(allCategoryArticles) && allCategoryArticles.length > 0) {
+                  // Filter out current article and limit to 4
+                  const currentId = article._id || article.id || id;
+                  const related = allCategoryArticles
+                    .filter(art => {
+                      const artId = art._id || art.id;
+                      return artId?.toString() !== currentId?.toString() && artId?.toString() !== id?.toString();
+                    })
+                    .slice(0, 4);
+                  
+                  if (related.length > 0) {
+                    loadedRelated = related;
+                  }
+                }
+              } catch (error) {
+                console.warn('Error loading related articles from API:', error);
+              }
+              
+              // Fallback: try to get from category news if API didn't return results
+              if (loadedRelated.length === 0 && foundCategory?.news && Array.isArray(foundCategory.news)) {
+                const currentId = article._id || article.id || id;
+                const related = foundCategory.news
+                  .filter(art => {
+                    const artId = art._id || art.id;
+                    return artId?.toString() !== currentId?.toString() && artId?.toString() !== id?.toString();
+                  })
+                  .slice(0, 4);
+                if (related.length > 0) {
+                  loadedRelated = related;
+                }
+              }
+              
+              // Set related articles if we found any
+              if (loadedRelated.length > 0) {
+                setRelatedArticles(loadedRelated);
+              } else {
+                // Final fallback: get latest articles from all categories
+                try {
+                  const categories = await getCategories();
+                  const allArticles = [];
+                  categories.forEach(cat => {
+                    if (cat.news && Array.isArray(cat.news)) {
+                      allArticles.push(...cat.news);
+                    }
+                  });
+                  
+                  const currentId = article._id || article.id || id;
+                  const related = allArticles
+                    .filter(art => {
+                      const artId = art._id || art.id;
+                      return artId?.toString() !== currentId?.toString() && artId?.toString() !== id?.toString();
+                    })
+                    .slice(0, 4);
+                  
+                  if (related.length > 0) {
+                    setRelatedArticles(related);
+                  }
+                } catch (error) {
+                  console.warn('Error loading fallback articles:', error);
+                }
+              }
           }
+          
         } else {
           // Fallback to JSON
           let foundNews = null;
@@ -67,6 +250,14 @@ const NewsDetail = () => {
           
           setNews(foundNews);
           setCategory(foundCategory);
+          
+          // Load related articles from same category (fallback)
+          if (foundCategory && foundCategory.news && Array.isArray(foundCategory.news)) {
+            const related = foundCategory.news
+              .filter(art => art.id !== parseInt(id))
+              .slice(0, 4);
+            setRelatedArticles(related);
+          }
         }
       } catch (error) {
         console.error('Error loading article:', error);
@@ -92,6 +283,14 @@ const NewsDetail = () => {
         
         setNews(foundNews);
         setCategory(foundCategory);
+        
+        // Load related articles from same category (fallback)
+        if (foundCategory && foundCategory.news && Array.isArray(foundCategory.news)) {
+          const related = foundCategory.news
+            .filter(art => art.id !== parseInt(id))
+            .slice(0, 4);
+          setRelatedArticles(related);
+        }
       } finally {
         setLoading(false);
       }
@@ -148,10 +347,21 @@ const NewsDetail = () => {
   
   const articleImage = getAbsoluteImageUrl(news?.featuredImage || news?.image || '');
   // Use backend URL for sharing so crawlers get proper meta tags
-  // Prefer slug over ID for better SEO
+  // Always use ID for news articles to avoid encoded characters (cleaner, more trustworthy URLs)
   const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navbharat-sauwad-backend.onrender.com';
   const articleUrl = news 
-    ? `${backendBase}/news/${news.slug || news._id || news.id}` 
+    ? (() => {
+        let identifier;
+        // Always prefer ID over slug for news articles (cleaner URLs)
+        if (news.id !== undefined && news.id !== null) {
+          identifier = String(news.id);
+        } else if (news._id) {
+          identifier = String(news._id);
+        } else {
+          identifier = id; // Fallback to URL param
+        }
+        return `${backendBase}/news/${identifier}`;
+      })()
     : window.location.href;
 
   return (
@@ -225,6 +435,84 @@ const NewsDetail = () => {
                   dangerouslySetInnerHTML={{ __html: news.content || '' }}
                 />
               </div>
+
+              {/* People Also Read Section */}
+              {relatedArticles && relatedArticles.length > 0 && (
+                <div className="mt-10 pt-8 border-t border-subtleGray">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="h-6 w-1 bg-newsRed rounded-full"></div>
+                    <h2 className="text-xl md:text-2xl font-bold text-deepCharcoal">
+                      संबंधित बातम्या
+                    </h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                    {relatedArticles.map((article) => {
+                      const articleId = article._id || article.id;
+                      const articleSlug = article.slug || articleId;
+                      
+                      // Get plain text for description
+                      const getPlainText = (html) => {
+                        if (!html) return '';
+                        try {
+                          const div = document.createElement('div');
+                          div.innerHTML = html;
+                          return div.textContent || div.innerText || '';
+                        } catch {
+                          return String(html).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+                        }
+                      };
+                      
+                      const articleDesc = article.content ? getPlainText(article.content).substring(0, 100) : '';
+                      
+                      return (
+                        <Link
+                          key={articleId}
+                          to={`/news/${articleSlug}`}
+                          className="group bg-cleanWhite rounded-lg overflow-hidden shadow-sm border border-subtleGray/70 hover:shadow-md transition-all duration-300"
+                        >
+                          <div className="relative overflow-hidden">
+                            {(article.featuredImage || article.image) ? (
+                              <img
+                                src={article.featuredImage || article.image}
+                                alt={article.title}
+                                className="w-full h-40 sm:h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+                              />
+                            ) : (
+                              <div className="w-full h-40 sm:h-48 bg-gray-200 flex items-center justify-center">
+                                <span className="text-gray-400 text-sm">No Image</span>
+                              </div>
+                            )}
+                            <div className="absolute top-2 left-2">
+                              <span className="bg-newsRed text-cleanWhite text-xs font-semibold px-2 py-1 rounded">
+                                {category?.name || article.categoryId?.name || 'बातमी'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="p-4">
+                            <h3 className="text-base sm:text-lg font-bold text-deepCharcoal mb-2 line-clamp-2 group-hover:text-newsRed transition-colors">
+                              {article.title}
+                            </h3>
+                            {articleDesc && (
+                              <p className="text-xs sm:text-sm text-slateBody line-clamp-2 mb-3">
+                                {articleDesc}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-2 text-xs text-metaGray">
+                              <span>{new Date(article.publishedAt || article.createdAt || article.date).toLocaleDateString('mr-IN')}</span>
+                              {article.author && (
+                                <>
+                                  <span>•</span>
+                                  <span>{article.author?.name || article.author}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Share and Back Buttons */}
               <div className="mt-8 pt-6 border-t border-subtleGray flex flex-col sm:flex-row justify-between items-center gap-4">

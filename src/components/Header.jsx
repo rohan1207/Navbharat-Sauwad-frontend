@@ -144,31 +144,31 @@ const Header = () => {
           </div>
 
           {/* Mobile Header */}
-          <div className="flex items-center justify-between py-2 md:hidden">
-            <div className="flex flex-col">
-              <span className="text-[11px] text-metaGray leading-tight">
+          <div className="flex items-center justify-between py-2.5 md:hidden gap-2">
+            <div className="flex flex-col min-w-0 flex-shrink">
+              <span className="text-[10px] text-metaGray leading-tight whitespace-nowrap">
                 {currentDate}
               </span>
             </div>
 
-            <Link to="/" className="flex-shrink-0">
+            <Link to="/" className="flex-shrink-0 mx-auto">
               <img
                 src="/logo1.png"
                 alt="नवभारत संवाद"
-                className="h-[90px] w-auto"
+                className="h-16 sm:h-20 w-auto"
               />
             </Link>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-1.5 flex-shrink-0">
               <Link
                 to="/epaper2"
-                className="px-3 py-1 rounded-full bg-editorialBlue text-cleanWhite text-xs font-semibold tracking-wide hover:bg-editorialBlue/90 transition-all duration-300 shadow-sm hover:shadow-md"
+                className="px-2.5 py-1.5 rounded-full bg-editorialBlue text-cleanWhite text-[10px] sm:text-xs font-semibold tracking-wide hover:bg-editorialBlue/90 transition-all duration-300 shadow-sm hover:shadow-md whitespace-nowrap"
               >
                 ई-पेपर
               </Link>
               <button
                 onClick={() => setIsSubscribeOpen(true)}
-                className="px-3 py-1 rounded-full bg-newsRed text-cleanWhite text-xs font-semibold tracking-wide hover:bg-newsRed/90 transition-all duration-300 shadow-sm hover:shadow-md"
+                className="px-2.5 py-1.5 rounded-full bg-newsRed text-cleanWhite text-[10px] sm:text-xs font-semibold tracking-wide hover:bg-newsRed/90 transition-all duration-300 shadow-sm hover:shadow-md whitespace-nowrap"
               >
                 सबस्क्राईब
               </button>
