@@ -7,7 +7,7 @@ const ShareButtons = ({ title, description, image, url }) => {
   const getBackendUrl = (frontendUrl) => {
     if (!frontendUrl) return frontendUrl;
     
-    const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navbharat-sauwad-backend.onrender.com';
+    const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navmanch-backend.onrender.com';
     
     // Extract path from frontend URL
     try {

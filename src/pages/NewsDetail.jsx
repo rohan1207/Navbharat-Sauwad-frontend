@@ -348,7 +348,7 @@ const NewsDetail = () => {
   const articleImage = getAbsoluteImageUrl(news?.featuredImage || news?.image || '');
   // Use backend URL for sharing so crawlers get proper meta tags
   // Always use ID for news articles to avoid encoded characters (cleaner, more trustworthy URLs)
-  const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navbharat-sauwad-backend.onrender.com';
+  const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navmanch-backend.onrender.com';
   const articleUrl = news 
     ? (() => {
         let identifier;

@@ -59,7 +59,7 @@ const Header = () => {
             <Link to="/" className="flex-shrink-0 mx-auto">
               <img
                 src="/logo1.png"
-                alt="नवभारत संवाद"
+                alt="नव मंच"
                 className="h-16 sm:h-20 w-auto"
               />
             </Link>
@@ -96,7 +96,7 @@ const Header = () => {
             >
               <img
                 src="/logo1.png"
-                alt="नवभारत संवाद"
+                alt="नव मंच"
                 className="h-20 md:h-24 w-auto"
               />
             </Link>

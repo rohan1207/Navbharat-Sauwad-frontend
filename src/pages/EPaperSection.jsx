@@ -1,9 +1,159 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { FaArrowLeft } from 'react-icons/fa';
+import { FaArrowLeft, FaDownload } from 'react-icons/fa';
 import { loadEpapers } from '../utils/epaperLoader';
 import ShareButtons from '../components/ShareButtons';
 import SEO from '../components/SEO';
+
+// Mobile zoomable image component for sections
+const SectionZoomableImage = ({ imageUrl, alt }) => {
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const containerRef = useRef(null);
+  
+  // Prevent body scroll on mobile
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const container = containerRef.current;
+
+    const getDistance = (touch1, touch2) => {
+      const dx = touch2.clientX - touch1.clientX;
+      const dy = touch2.clientY - touch1.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    let initialDistance = 0;
+    let initialScale = 1;
+
+    const handleTouchStart = (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        initialDistance = getDistance(e.touches[0], e.touches[1]);
+        initialScale = scale;
+      } else if (e.touches.length === 1 && scale > 1) {
+        setIsDragging(true);
+        setDragStart({
+          x: e.touches[0].clientX - position.x,
+          y: e.touches[0].clientY - position.y
+        });
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const currentDistance = getDistance(e.touches[0], e.touches[1]);
+        const newScale = Math.max(1, Math.min(3, (currentDistance / initialDistance) * initialScale));
+        setScale(newScale);
+      } else if (e.touches.length === 1 && isDragging && scale > 1) {
+        e.preventDefault();
+        const newX = e.touches[0].clientX - dragStart.x;
+        const newY = e.touches[0].clientY - dragStart.y;
+        
+        const maxX = (scale - 1) * (container.offsetWidth / 2);
+        const maxY = (scale - 1) * (container.offsetHeight / 2);
+        
+        setPosition({
+          x: Math.max(-maxX, Math.min(maxX, newX)),
+          y: Math.max(-maxY, Math.min(maxY, newY))
+        });
+      }
+    };
+
+    const handleTouchEnd = () => {
+      setIsDragging(false);
+      if (scale < 1) setScale(1);
+      if (scale === 1) {
+        setPosition({ x: 0, y: 0 });
+      }
+    };
+
+    let lastTap = 0;
+    const handleDoubleTap = (e) => {
+      const currentTime = new Date().getTime();
+      const tapLength = currentTime - lastTap;
+      if (tapLength < 300 && tapLength > 0) {
+        e.preventDefault();
+        if (scale === 1) {
+          setScale(2);
+        } else {
+          setScale(1);
+          setPosition({ x: 0, y: 0 });
+        }
+      }
+      lastTap = currentTime;
+    };
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: false });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd);
+    container.addEventListener('touchend', handleDoubleTap);
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('touchend', handleDoubleTap);
+    };
+  }, [scale, position, isDragging, dragStart]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full overflow-hidden touch-none bg-cleanWhite"
+      style={{
+        minHeight: 'calc(100vh - 60px)',
+        touchAction: 'none',
+        userSelect: 'none'
+      }}
+    >
+      <div
+        style={{
+          transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+          transformOrigin: 'center center',
+          transition: scale === 1 ? 'transform 0.3s ease-out' : 'none',
+          width: '100%',
+          minHeight: 'calc(100vh - 60px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '10px'
+        }}
+      >
+        <img
+          src={imageUrl}
+          alt={alt}
+          className="w-full h-auto object-contain"
+          style={{
+            maxWidth: '100%',
+            pointerEvents: 'none',
+            imageRendering: 'crisp-edges'
+          }}
+          onError={(e) => {
+            console.error('Error loading section image:', imageUrl);
+          }}
+        />
+      </div>
+      
+      {/* Zoom indicator */}
+      {scale > 1 && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-xs z-10">
+          {Math.round(scale * 100)}%
+        </div>
+      )}
+    </div>
+  );
+};
 
 const EPaperSection = () => {
   const { id, pageNo, sectionId } = useParams();
@@ -23,6 +173,17 @@ const EPaperSection = () => {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Prevent body scroll on mobile when viewing section
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, []);
 
   useEffect(() => {
@@ -195,7 +356,7 @@ const EPaperSection = () => {
 
   // Use backend URL for sharing so crawlers get proper meta tags
   // Use IDs instead of slugs for cleaner URLs (avoid "Untitled" and encoded characters)
-  const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navbharat-sauwad-backend.onrender.com';
+  const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navmanch-backend.onrender.com';
   
   // Build clean URL with IDs
   let epaperIdentifier;
@@ -267,6 +428,118 @@ const EPaperSection = () => {
   // Use full page image for section share cards (more reliable than cropped section)
   const shareImage = getAbsoluteImageUrl(page?.image || epaper?.thumbnail || '');
 
+  // Download section image with logo on top
+  const downloadSectionWithLogo = async (sectionImageUrl, sectionTitle) => {
+    try {
+      // Load section image
+      const sectionImg = new Image();
+      sectionImg.crossOrigin = 'anonymous';
+      
+      await new Promise((resolve, reject) => {
+        sectionImg.onload = resolve;
+        sectionImg.onerror = reject;
+        sectionImg.src = sectionImageUrl;
+      });
+
+      // Load logo
+      const logoImg = new Image();
+      logoImg.crossOrigin = 'anonymous';
+      
+      await new Promise((resolve, reject) => {
+        logoImg.onload = resolve;
+        logoImg.onerror = () => {
+          console.warn('Logo failed to load, using watermark approach');
+          resolve(); // Continue even if logo fails
+        };
+        logoImg.src = '/logo1.png';
+      });
+
+      // Create canvas - extend from top to place logo above clip
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      // Calculate logo dimensions
+      let logoHeight = 0;
+      let logoWidth = 0;
+      let logoAreaHeight = 0;
+      
+      if (logoImg.complete && logoImg.naturalWidth > 0) {
+        // Logo size: 12% of section width or max 100px height
+        logoHeight = Math.min(sectionImg.width * 0.12, 100);
+        const logoAspectRatio = logoImg.width / logoImg.height;
+        logoWidth = logoHeight * logoAspectRatio;
+        logoAreaHeight = logoHeight + 40; // Logo height + padding (20px top + 20px bottom)
+      } else {
+        // If logo fails to load, use watermark approach
+        logoAreaHeight = 0;
+      }
+
+      // Set canvas size: section width, extended height (section + logo area)
+      canvas.width = sectionImg.width;
+      canvas.height = sectionImg.height + logoAreaHeight;
+
+      // Fill white background
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw section image below logo area
+      ctx.drawImage(sectionImg, 0, logoAreaHeight);
+
+      // Draw logo above the clip (centered)
+      if (logoImg.complete && logoImg.naturalWidth > 0 && logoAreaHeight > 0) {
+        const logoX = (canvas.width - logoWidth) / 2;
+        const logoY = 20; // 20px from top
+        
+        // Draw logo
+        ctx.drawImage(
+          logoImg,
+          logoX,
+          logoY,
+          logoWidth,
+          logoHeight
+        );
+      } else if (logoImg.complete && logoImg.naturalWidth > 0) {
+        // Fallback: Watermark approach - spread logo with low opacity
+        const watermarkSize = Math.min(sectionImg.width * 0.3, 200);
+        const watermarkAspectRatio = logoImg.width / logoImg.height;
+        const watermarkWidth = watermarkSize * watermarkAspectRatio;
+        const watermarkHeight = watermarkSize;
+        
+        // Save context for opacity
+        ctx.save();
+        ctx.globalAlpha = 0.15; // Low opacity for watermark effect
+        
+        // Draw watermark in center
+        ctx.drawImage(
+          logoImg,
+          (sectionImg.width - watermarkWidth) / 2,
+          (sectionImg.height - watermarkHeight) / 2,
+          watermarkWidth,
+          watermarkHeight
+        );
+        
+        ctx.restore();
+      }
+
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${sectionTitle || 'section'}-navmanch-${Date.now()}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
+      }, 'image/png');
+    } catch (error) {
+      console.error('Error downloading section:', error);
+      alert('डाउनलोड करताना त्रुटी आली. कृपया पुन्हा प्रयत्न करा.');
+    }
+  };
+
   if (loading || !epaper || !page || !section) {
     return (
       <div className="min-h-screen bg-subtleGray flex items-center justify-center">
@@ -304,8 +577,8 @@ const EPaperSection = () => {
         type="article"
       />
       <div className="min-h-screen bg-subtleGray">
-        {/* Header */}
-        <div className="bg-cleanWhite border-b-2 border-subtleGray py-3 sm:py-4 sticky top-0 z-40 shadow-sm">
+        {/* Desktop Header */}
+        <div className="hidden md:block bg-cleanWhite border-b-2 border-subtleGray py-3 sm:py-4 sticky top-0 z-40 shadow-sm">
           <div className="container mx-auto px-3 sm:px-4">
             <div className="flex items-center justify-between gap-2">
               <Link
@@ -313,8 +586,28 @@ const EPaperSection = () => {
                 className="flex items-center gap-1.5 sm:gap-2 text-metaGray hover:text-deepCharcoal transition-colors font-semibold text-sm sm:text-base"
               >
                 <FaArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">मागे जा</span>
-                <span className="sm:hidden">मागे</span>
+                <span>मागे जा</span>
+              </Link>
+              <ShareButtons
+                title={shareTitle}
+                description={shareDescription}
+                image={shareImage}
+                url={shareUrl}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Header - Minimal - Fixed at top */}
+        <div className="md:hidden bg-cleanWhite border-b border-subtleGray py-2 fixed top-0 left-0 right-0 z-50 shadow-sm">
+          <div className="container mx-auto px-3">
+            <div className="flex items-center justify-between">
+              <Link
+                to={`/epaper/${id}`}
+                className="flex items-center gap-2 text-deepCharcoal hover:text-newsRed transition-colors font-semibold text-sm"
+              >
+                <FaArrowLeft className="w-4 h-4" />
+                <span>मागे</span>
               </Link>
               <ShareButtons
                 title={shareTitle}
@@ -329,68 +622,118 @@ const EPaperSection = () => {
       {/* Main Content */}
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
         <div className="max-w-6xl mx-auto">
-          {/* Top Logo - Seamless */}
-          <div className="flex items-center justify-center py-4 sm:py-6 bg-gradient-to-b from-cleanWhite to-subtleGray/10 rounded-t-xl">
-            <img
-              src="/logo1.png"
-              alt="नव मंच"
-              className="h-16 sm:h-20 md:h-24 w-auto"
-            />
-          </div>
-          
-          {/* Cropped Image - Responsive for Mobile */}
-          <div className="bg-cleanWhite overflow-hidden flex items-center justify-center p-2 sm:p-4">
-            {croppedImageUrl ? (
-              <img
-                src={croppedImageUrl}
-                alt={getCleanSectionTitle()}
-                className="w-full h-auto max-w-full object-contain md:w-auto md:max-w-none"
-                style={{ 
-                  imageRendering: 'crisp-edges',
-                  display: 'block',
-                  // Desktop: use calculated dimensions, Mobile: use 100% width (handled by className)
-                  ...(!isMobile ? {
-                    maxWidth: `${displayWidth}px`,
-                    maxHeight: `${displayHeight}px`
-                  } : {})
-                }}
-                onError={(e) => {
-                  console.error('Error loading cropped image:', croppedImageUrl);
-                  e.target.src = page.image;
-                }}
-              />
-            ) : (
-              <div className="text-center text-metaGray py-8 sm:py-12">
-                <p className="text-sm sm:text-base">छवी लोड होत आहे...</p>
-              </div>
-            )}
-          </div>
-          
-          {/* Footer Section */}
-          <div className="bg-gradient-to-b from-subtleGray/10 to-cleanWhite pt-4 pb-6 rounded-b-xl">
-            {/* Website URL */}
-            <div className="text-center mb-4">
-              <p className="text-xs md:text-sm text-metaGray font-medium tracking-wide">
-                navmanch.com/epapers
-              </p>
+          {/* Desktop: Full layout with logo and footer */}
+          <div className="hidden md:block">
+            {/* Image Container with Logo Above - Adapts to image width */}
+            <div className="bg-cleanWhite overflow-hidden rounded-t-xl flex flex-col items-center">
+              {croppedImageUrl ? (
+                <div className="flex flex-col items-center w-full">
+                  {/* Logo - Positioned directly above image with minimal gap, matches image width */}
+                  <div className="flex items-center justify-center pt-2 pb-0" style={{ width: `${displayWidth}px`, maxWidth: '100%' }}>
+                    <img
+                      src="/logo1.png"
+                      alt="नव मंच"
+                      className="h-16 md:h-20 w-auto"
+                    />
+                  </div>
+                  
+                  {/* Cropped Image */}
+                  <div className="flex items-center justify-center pt-1 px-2">
+                    <img
+                      src={croppedImageUrl}
+                      alt={getCleanSectionTitle()}
+                      className="w-full h-auto max-w-full object-contain md:w-auto md:max-w-none"
+                      style={{ 
+                        imageRendering: 'crisp-edges',
+                        display: 'block',
+                        maxWidth: `${displayWidth}px`,
+                        maxHeight: `${displayHeight}px`
+                      }}
+                      onError={(e) => {
+                        console.error('Error loading cropped image:', croppedImageUrl);
+                        e.target.src = page.image;
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-metaGray py-8 sm:py-12">
+                  <p className="text-sm sm:text-base">छवी लोड होत आहे...</p>
+                </div>
+              )}
             </div>
             
-            {/* Metadata */}
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 px-4 text-xs md:text-sm text-metaGray">
-              <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-deepCharcoal">तारीख:</span>
-                <span>{formatDate(epaper.date)}</span>
+            {/* Download Button - Desktop */}
+            <div className="bg-cleanWhite flex items-center justify-center py-4">
+              <button
+                onClick={() => downloadSectionWithLogo(croppedImageUrl || page.image, getCleanSectionTitle())}
+                className="flex items-center gap-2 px-6 py-3 bg-newsRed text-white rounded-lg font-semibold hover:bg-newsRed/90 transition-colors shadow-md hover:shadow-lg"
+              >
+                <FaDownload className="w-4 h-4" />
+                <span>क्लिप डाउनलोड करा</span>
+              </button>
+            </div>
+            
+            {/* Footer Section */}
+            <div className="bg-gradient-to-b from-subtleGray/10 to-cleanWhite pt-4 pb-6 rounded-b-xl">
+              {/* Website URL */}
+              <div className="text-center mb-4">
+                <p className="text-xs md:text-sm text-metaGray font-medium tracking-wide">
+                  navmanch.com/epapers
+                </p>
               </div>
-              <div className="hidden md:block w-px h-4 bg-subtleGray"></div>
+              
+              {/* Metadata */}
+              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 px-4 text-xs md:text-sm text-metaGray">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-deepCharcoal">ई-पेपर:</span>
-                  <span className="max-w-[200px] truncate">{getCleanEpaperTitle()}</span>
+                  <span className="font-semibold text-deepCharcoal">तारीख:</span>
+                  <span>{formatDate(epaper.date)}</span>
                 </div>
-              <div className="hidden md:block w-px h-4 bg-subtleGray"></div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-deepCharcoal">पृष्ठ:</span>
-                <span>{page.pageNo}</span>
+                <div className="hidden md:block w-px h-4 bg-subtleGray"></div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-deepCharcoal">ई-पेपर:</span>
+                    <span className="max-w-[200px] truncate">{getCleanEpaperTitle()}</span>
+                  </div>
+                <div className="hidden md:block w-px h-4 bg-subtleGray"></div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-deepCharcoal">पृष्ठ:</span>
+                  <span>{page.pageNo}</span>
+                </div>
               </div>
+            </div>
+          </div>
+
+          {/* Mobile: Full screen zoomable view */}
+          <div className="md:hidden pt-12">
+            {/* Image Container with Logo Above - Adapts to image width */}
+            <div className="w-full bg-cleanWhite flex flex-col items-center">
+              {/* Logo - Positioned directly above image with minimal gap */}
+              <div className="flex items-center justify-center pt-2 pb-0 w-full px-2">
+                <img
+                  src="/logo1.png"
+                  alt="नव मंच"
+                  className="h-14 w-auto"
+                />
+              </div>
+              
+              {/* Section Image */}
+              <div className="w-full bg-cleanWhite flex items-center justify-center pt-1">
+                <SectionZoomableImage 
+                  imageUrl={croppedImageUrl || page.image}
+                  alt={getCleanSectionTitle()}
+                />
+              </div>
+            </div>
+            
+            {/* Mobile Download Button - Fixed at bottom */}
+            <div className="fixed bottom-20 left-0 right-0 z-50 px-4 pb-4">
+              <button
+                onClick={() => downloadSectionWithLogo(croppedImageUrl || page.image, getCleanSectionTitle())}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-newsRed text-white rounded-lg font-semibold hover:bg-newsRed/90 transition-colors shadow-lg"
+              >
+                <FaDownload className="w-5 h-5" />
+                <span>क्लिप डाउनलोड करा</span>
+              </button>
             </div>
           </div>
         </div>

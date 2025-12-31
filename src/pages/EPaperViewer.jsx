@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { FaChevronUp, FaChevronDown } from 'react-icons/fa';
+import { FaChevronUp, FaChevronDown, FaArrowLeft } from 'react-icons/fa';
 import { loadEpapers } from '../utils/epaperLoader';
 import EPaperPage2 from '../components/EPaperPage2';
 import ShareButtons from '../components/ShareButtons';
@@ -15,6 +15,17 @@ const EPaperViewer = () => {
   const [loading, setLoading] = useState(true);
   const sidebarRef = useRef(null);
   const mainContentRef = useRef(null);
+
+  // Prevent body scroll on mobile when viewing e-paper
+  useEffect(() => {
+    const isMobile = window.innerWidth < 1024;
+    if (isMobile) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   useEffect(() => {
     const loadEpaper = async () => {
@@ -98,7 +109,7 @@ const EPaperViewer = () => {
 
   // Use backend URL for sharing so crawlers get proper meta tags
   // Use IDs for cleaner URLs (avoid encoded characters)
-  const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navbharat-sauwad-backend.onrender.com';
+  const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navmanch-backend.onrender.com';
   
   // Build clean URL with ID
   let epaperIdentifier;
@@ -162,9 +173,9 @@ const EPaperViewer = () => {
         url={shareUrl}
         type="article"
       />
-      <div className="min-h-screen bg-subtleGray">
-        {/* Header */}
-        <div className="bg-cleanWhite border-b-2 border-subtleGray py-3 sm:py-4 sticky top-0 z-40 shadow-sm">
+      <div className="min-h-screen bg-cleanWhite lg:bg-subtleGray">
+        {/* Desktop Header */}
+        <div className="hidden lg:block bg-cleanWhite border-b-2 border-subtleGray py-3 sm:py-4 sticky top-0 z-40 shadow-sm">
           <div className="container mx-auto px-3 sm:px-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
               <div className="flex-1 min-w-0">
@@ -189,8 +200,29 @@ const EPaperViewer = () => {
           </div>
         </div>
 
+        {/* Mobile Header - Minimal (only back and share) - Fixed at top */}
+        <div className="lg:hidden bg-cleanWhite border-b border-subtleGray py-2 fixed top-0 left-0 right-0 z-50 shadow-sm">
+          <div className="container mx-auto px-3">
+            <div className="flex items-center justify-between">
+              <Link
+                to="/epaper2"
+                className="flex items-center gap-2 text-deepCharcoal hover:text-newsRed transition-colors font-semibold text-sm"
+              >
+                <FaArrowLeft className="w-4 h-4" />
+                <span>मागे</span>
+              </Link>
+              <ShareButtons
+                title={shareTitle}
+                description={shareDescription}
+                image={shareImage}
+                url={shareUrl}
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Main Content */}
-        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        <div className="container mx-auto px-0 lg:px-3 sm:px-4 py-0 lg:py-4 sm:py-6">
           <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
             {/* Left Sidebar - Page Thumbnails (Desktop only) */}
             <div className="hidden lg:block w-32 flex-shrink-0">
@@ -241,7 +273,7 @@ const EPaperViewer = () => {
               </div>
             </div>
 
-            {/* Main Content Area - Desktop: single page, Mobile: all pages stacked */}
+            {/* Main Content Area - Desktop: single page, Mobile: all pages stacked normally */}
             <div ref={mainContentRef} className="flex-1">
               {/* Desktop: Show selected page only */}
               <div className="hidden lg:block">
@@ -256,14 +288,16 @@ const EPaperViewer = () => {
                 )}
               </div>
 
-              {/* Mobile: Show all pages stacked one below other */}
-              <div className="lg:hidden space-y-4 sm:space-y-6">
+              {/* Mobile: Pages stacked normally (white background, one below other) */}
+              <div className="lg:hidden pt-12">
                 {epaper.pages.map((page, index) => (
-                  <div key={page.pageNo} className="bg-cleanWhite rounded-lg border border-subtleGray p-3 sm:p-4">
+                  <div key={page.pageNo} className="w-full bg-cleanWhite">
                     <EPaperPage2
                       page={page}
                       epaperId={id}
                       epaperSlug={epaper?.slug}
+                      isMobile={true}
+                      totalPages={epaper.pages.length}
                     />
                   </div>
                 ))}

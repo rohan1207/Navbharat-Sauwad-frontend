@@ -1,8 +1,13 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { useHeader } from '../context/HeaderContext';
 
 const MainContent = ({ children }) => {
   const { isHeaderVisible, headerHeight, breakingNewsHeight } = useHeader();
+  const location = useLocation();
+  const isEpaperRoute = location.pathname.startsWith('/epaper/') && location.pathname !== '/epaper' && location.pathname !== '/epaper2';
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+  
   // Navigation height is responsive: min-h-[56px] on mobile, min-h-[60px] on sm+
   const navigationHeight = 56; // Mobile min height (min-h-[56px] = 3.5rem = 56px)
   const actualBreakingNewsHeight = breakingNewsHeight || 44; // Fallback to mobile height
@@ -11,7 +16,8 @@ const MainContent = ({ children }) => {
   const totalFixedHeightVisible = (headerHeight || 0) + actualBreakingNewsHeight + navigationHeight;
   const totalFixedHeightHidden = actualBreakingNewsHeight + navigationHeight;
 
-  const paddingTop = isHeaderVisible ? totalFixedHeightVisible : totalFixedHeightHidden;
+  // No padding on mobile e-paper routes (full screen)
+  const paddingTop = (isEpaperRoute && isMobile) ? 0 : (isHeaderVisible ? totalFixedHeightVisible : totalFixedHeightHidden);
 
   return (
     <main 
