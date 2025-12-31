@@ -125,9 +125,9 @@ const SectionZoomableImage = ({ imageUrl, alt }) => {
           width: '100%',
           minHeight: 'calc(100vh - 60px)',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-start',
           justifyContent: 'center',
-          padding: '10px'
+          padding: '2px'
         }}
       >
         <img
@@ -707,17 +707,17 @@ const EPaperSection = () => {
           <div className="md:hidden pt-12">
             {/* Image Container with Logo Above - Adapts to image width */}
             <div className="w-full bg-cleanWhite flex flex-col items-center">
-              {/* Logo - Positioned directly above image with minimal gap */}
-              <div className="flex items-center justify-center pt-2 pb-0 w-full px-2">
+              {/* Logo - Positioned at top with minimal padding */}
+              <div className="flex items-center justify-center pt-1 pb-0 w-full px-2">
                 <img
                   src="/logo1.png"
                   alt="नव मंच"
-                  className="h-14 w-auto"
+                  className="h-12 w-auto"
                 />
               </div>
               
-              {/* Section Image */}
-              <div className="w-full bg-cleanWhite flex items-center justify-center pt-1">
+              {/* Section Image - Starts immediately after logo, no gap */}
+              <div className="w-full bg-cleanWhite flex items-center justify-center">
                 <SectionZoomableImage 
                   imageUrl={croppedImageUrl || page.image}
                   alt={getCleanSectionTitle()}
