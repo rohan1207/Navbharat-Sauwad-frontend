@@ -152,10 +152,12 @@ const EPaperPage2 = ({ page, onSectionClick, epaperId, epaperSlug, isMobile = fa
           className="relative w-full bg-cleanWhite"
           style={{
             // Allow scrolling when not zoomed, prevent when zoomed
-            touchAction: scale > 1 ? 'none' : 'pan-y',
+            touchAction: scale > 1 ? 'none' : 'auto',
             userSelect: 'none',
             // Allow overflow when not zoomed for scrolling
-            overflow: scale > 1 ? 'hidden' : 'visible'
+            overflow: scale > 1 ? 'hidden' : 'visible',
+            // Ensure container doesn't block scrolling
+            position: 'relative'
           }}
         >
           <div

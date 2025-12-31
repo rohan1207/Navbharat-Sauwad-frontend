@@ -16,16 +16,8 @@ const EPaperViewer = () => {
   const sidebarRef = useRef(null);
   const mainContentRef = useRef(null);
 
-  // Prevent body scroll on mobile when viewing e-paper
-  useEffect(() => {
-    const isMobile = window.innerWidth < 1024;
-    if (isMobile) {
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, []);
+  // Don't prevent body scroll - allow normal scrolling on mobile
+  // Users need to scroll to see all pages stacked one below the other
 
   useEffect(() => {
     const loadEpaper = async () => {
@@ -289,7 +281,7 @@ const EPaperViewer = () => {
               </div>
 
               {/* Mobile: Pages stacked normally (white background, one below other) */}
-              <div className="lg:hidden pt-12">
+              <div className="lg:hidden pt-12 space-y-0">
                 {epaper.pages.map((page, index) => (
                   <div key={page.pageNo} className="w-full bg-cleanWhite">
                     <EPaperPage2
