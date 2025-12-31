@@ -3,31 +3,43 @@ import { FaWhatsapp, FaTwitter, FaFacebook, FaShareAlt } from 'react-icons/fa';
 
 const ShareButtons = ({ title, description, image, url }) => {
 
-  // Helper function to convert frontend URL to backend URL for crawlers
-  const getBackendUrl = (frontendUrl) => {
-    if (!frontendUrl) return frontendUrl;
+  // Use frontend URL for sharing (cleaner, better branding)
+  const frontendBase = 'https://navmanchnews.com';
+  
+  // Helper function to ensure frontend URL
+  const getFrontendUrl = (inputUrl) => {
+    if (!inputUrl) return window.location.href;
     
-    const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navmanch-backend.onrender.com';
-    
-    // Extract path from frontend URL
     try {
-      const urlObj = new URL(frontendUrl);
-      // Return backend URL with same path
-      return `${backendBase}${urlObj.pathname}${urlObj.search}`;
+      const urlObj = new URL(inputUrl);
+      // If it's a backend URL, convert to frontend
+      if (urlObj.hostname.includes('onrender.com') || urlObj.hostname.includes('backend')) {
+        return `${frontendBase}${urlObj.pathname}${urlObj.search}`;
+      }
+      // If it's already frontend URL, return as is
+      if (urlObj.hostname.includes('navmanchnews.com')) {
+        return inputUrl;
+      }
+      // If relative, make it absolute with frontend domain
+      if (inputUrl.startsWith('/')) {
+        return `${frontendBase}${inputUrl}`;
+      }
+      return inputUrl;
     } catch (e) {
       // If URL parsing fails, try simple string replacement
-      const frontendBase = window.location.origin;
-      if (frontendUrl.startsWith(frontendBase)) {
-        return frontendUrl.replace(frontendBase, backendBase);
+      if (inputUrl.includes('onrender.com') || inputUrl.includes('backend')) {
+        return inputUrl.replace(/https?:\/\/[^\/]+/, frontendBase);
       }
-      // If it's already a backend URL or absolute URL, return as is
-      return frontendUrl;
+      if (inputUrl.startsWith('/')) {
+        return `${frontendBase}${inputUrl}`;
+      }
+      return inputUrl;
     }
   };
 
-  // Get current page URL if not provided, and convert to backend URL
-  const frontendUrl = url || window.location.href;
-  const shareUrl = getBackendUrl(frontendUrl);
+  // Get current page URL if not provided, and ensure it's frontend URL
+  const inputUrl = url || window.location.href;
+  const shareUrl = getFrontendUrl(inputUrl);
   const shareTitle = title || document.title;
   const shareDescription = description || '';
   const shareImage = image || '';

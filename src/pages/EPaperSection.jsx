@@ -354,9 +354,9 @@ const EPaperSection = () => {
     });
   };
 
-  // Use backend URL for sharing so crawlers get proper meta tags
+  // Use frontend URL for sharing (cleaner, better branding)
   // Use IDs instead of slugs for cleaner URLs (avoid "Untitled" and encoded characters)
-  const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navmanch-backend.onrender.com';
+  const frontendBase = 'https://navmanchnews.com';
   
   // Build clean URL with IDs
   let epaperIdentifier;
@@ -387,7 +387,7 @@ const EPaperSection = () => {
     sectionIdentifier = sectionId;
   }
   
-  const shareUrl = `${backendBase}/epaper/${epaperIdentifier}/page/${page?.pageNo || '1'}/section/${sectionIdentifier}${window.location.search}`;
+  const shareUrl = `${frontendBase}/epaper/${epaperIdentifier}/page/${page?.pageNo || '1'}/section/${sectionIdentifier}${window.location.search}`;
   
   // Clean title - remove "Untitled" and empty titles
   const getCleanSectionTitle = () => {

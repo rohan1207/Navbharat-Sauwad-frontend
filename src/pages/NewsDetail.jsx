@@ -346,9 +346,9 @@ const NewsDetail = () => {
   };
   
   const articleImage = getAbsoluteImageUrl(news?.featuredImage || news?.image || '');
-  // Use backend URL for sharing so crawlers get proper meta tags
+  // Use frontend URL for sharing (cleaner, better branding)
   // Always use ID for news articles to avoid encoded characters (cleaner, more trustworthy URLs)
-  const backendBase = import.meta.env.VITE_BACKEND_URL || 'https://navmanch-backend.onrender.com';
+  const frontendBase = 'https://navmanchnews.com';
   const articleUrl = news 
     ? (() => {
         let identifier;
@@ -360,7 +360,7 @@ const NewsDetail = () => {
         } else {
           identifier = id; // Fallback to URL param
         }
-        return `${backendBase}/news/${identifier}`;
+        return `${frontendBase}/news/${identifier}`;
       })()
     : window.location.href;
 
