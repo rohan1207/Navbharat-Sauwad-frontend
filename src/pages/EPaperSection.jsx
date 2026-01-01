@@ -725,8 +725,8 @@ const EPaperSection = () => {
               </div>
             </div>
             
-            {/* Mobile Download Button - Fixed at bottom */}
-            <div className="fixed bottom-20 left-0 right-0 z-50 px-4 pb-4">
+            {/* Mobile Download Button - Below container, outside clip */}
+            <div className="w-full bg-cleanWhite px-4 py-4 pb-6">
               <button
                 onClick={() => downloadSectionWithLogo(croppedImageUrl || page.image, getCleanSectionTitle())}
                 className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-newsRed text-white rounded-lg font-semibold hover:bg-newsRed/90 transition-colors shadow-lg"
