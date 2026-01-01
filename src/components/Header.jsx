@@ -28,35 +28,43 @@ const Header = () => {
     year: 'numeric'
   });
 
-  // Animate stats from 0 to target values
+  // Animate stats from 0 to target values with 3 second delay
   useEffect(() => {
-    const duration = 1500; // 1.5 seconds
-    const startTime = Date.now();
-    const startValues = { ...stats };
+    const delay = 3000; // 3 seconds delay
+    const duration = 1500; // 1.5 seconds animation duration
+    
+    // Wait 3 seconds before starting animation
+    const timeoutId = setTimeout(() => {
+      const startTime = Date.now();
+      const startValues = { ...stats };
 
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      // Easing function for smooth animation (ease-out)
-      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function for smooth animation (ease-out)
+        const easeOut = 1 - Math.pow(1 - progress, 3);
 
-      setStats({
-        totalVisits: Math.floor(startValues.totalVisits + (targetStats.totalVisits - startValues.totalVisits) * easeOut),
-        visitsToday: Math.floor(startValues.visitsToday + (targetStats.visitsToday - startValues.visitsToday) * easeOut),
-        totalHits: Math.floor(startValues.totalHits + (targetStats.totalHits - startValues.totalHits) * easeOut),
-        hitsToday: Math.floor(startValues.hitsToday + (targetStats.hitsToday - startValues.hitsToday) * easeOut)
-      });
+        setStats({
+          totalVisits: Math.floor(startValues.totalVisits + (targetStats.totalVisits - startValues.totalVisits) * easeOut),
+          visitsToday: Math.floor(startValues.visitsToday + (targetStats.visitsToday - startValues.visitsToday) * easeOut),
+          totalHits: Math.floor(startValues.totalHits + (targetStats.totalHits - startValues.totalHits) * easeOut),
+          hitsToday: Math.floor(startValues.hitsToday + (targetStats.hitsToday - startValues.hitsToday) * easeOut)
+        });
 
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        // Ensure final values are exactly the target values
-        setStats({ ...targetStats });
-      }
-    };
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          // Ensure final values are exactly the target values
+          setStats({ ...targetStats });
+        }
+      };
 
-    requestAnimationFrame(animate);
+      requestAnimationFrame(animate);
+    }, delay);
+
+    // Cleanup timeout on unmount
+    return () => clearTimeout(timeoutId);
   }, []); // Run only once on mount
 
   // TODO: Fetch real stats from API
