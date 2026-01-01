@@ -8,17 +8,56 @@ const Header = () => {
   const [isSubscribeOpen, setIsSubscribeOpen] = useState(false);
   const { isHeaderVisible, headerRef } = useHeader();
   const [stats, setStats] = useState({
-    totalVisits: 789346,
-    visitsToday: 464,
-    totalHits: 1355258,
-    hitsToday: 2369
+    totalVisits: 0,
+    visitsToday: 0,
+    totalHits: 0,
+    hitsToday: 0
   });
+
+  // Target values for animation
+  const targetStats = {
+    totalVisits: 120,
+    visitsToday: 85,
+    totalHits: 250,
+    hitsToday: 180
+  };
   
   const currentDate = new Date().toLocaleDateString('mr-IN', {
     day: 'numeric',
     month: 'long',
     year: 'numeric'
   });
+
+  // Animate stats from 0 to target values
+  useEffect(() => {
+    const duration = 1500; // 1.5 seconds
+    const startTime = Date.now();
+    const startValues = { ...stats };
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Easing function for smooth animation (ease-out)
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+
+      setStats({
+        totalVisits: Math.floor(startValues.totalVisits + (targetStats.totalVisits - startValues.totalVisits) * easeOut),
+        visitsToday: Math.floor(startValues.visitsToday + (targetStats.visitsToday - startValues.visitsToday) * easeOut),
+        totalHits: Math.floor(startValues.totalHits + (targetStats.totalHits - startValues.totalHits) * easeOut),
+        hitsToday: Math.floor(startValues.hitsToday + (targetStats.hitsToday - startValues.hitsToday) * easeOut)
+      });
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // Ensure final values are exactly the target values
+        setStats({ ...targetStats });
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, []); // Run only once on mount
 
   // TODO: Fetch real stats from API
   // useEffect(() => {
