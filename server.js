@@ -56,6 +56,43 @@ app.use((req, res, next) => {
   }
 });
 
+// Serve robots.txt
+app.get('/robots.txt', (req, res) => {
+  try {
+    const robotsPath = join(__dirname, 'dist', 'robots.txt');
+    const robotsTxt = readFileSync(robotsPath, 'utf-8');
+    res.setHeader('Content-Type', 'text/plain');
+    res.send(robotsTxt);
+  } catch (error) {
+    // Fallback if robots.txt doesn't exist
+    res.setHeader('Content-Type', 'text/plain');
+    res.send(`User-agent: *
+Allow: /
+
+Sitemap: https://navmanchnews.com/sitemap.xml`);
+  }
+});
+
+// Proxy sitemap request to backend
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const backendUrl = BACKEND_URL || 'https://navmanch-backend.onrender.com';
+    const response = await fetch(`${backendUrl}/sitemap.xml`);
+    
+    if (!response.ok) {
+      throw new Error(`Backend responded with ${response.status}`);
+    }
+    
+    const xml = await response.text();
+    res.setHeader('Content-Type', 'application/xml');
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+    res.send(xml);
+  } catch (error) {
+    console.error('Error fetching sitemap:', error);
+    res.status(500).send('Error loading sitemap');
+  }
+});
+
 // Serve static files from dist directory
 app.use(express.static(join(__dirname, 'dist')));
 
