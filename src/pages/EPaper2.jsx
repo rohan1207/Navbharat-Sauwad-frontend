@@ -210,8 +210,8 @@ const EPaper2 = () => {
           </div>
         </div>
       </div>
-
-    </div>
+      </div>
+    </>
   );
 };
 
