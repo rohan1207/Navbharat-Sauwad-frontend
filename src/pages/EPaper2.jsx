@@ -4,6 +4,7 @@ import { FaDownload, FaSync, FaArrowRight } from 'react-icons/fa';
 import Sidebar from '../components/Sidebar';
 import EPaperPage2 from '../components/EPaperPage2';
 import { loadEpapers } from '../utils/epaperLoader';
+import SEO from '../components/SEO';
 
 const EPaper2 = () => {
   const [epapers, setEpapers] = useState([]);
@@ -33,8 +34,69 @@ const EPaper2 = () => {
     return null;
   };
 
+  // SEO data for epaper listing page
+  const seoTitle = 'नव मंच ई-पेपर | Nav Manch E-Paper - मराठी वृत्तपत्र';
+  const seoDescription = 'नव मंच ई-पेपर वाचा. साप्ताहिक मराठी वृत्तपत्राचे डिजिटल आवृत्ती. दर आठवड्याला नवीन ई-पेपर उपलब्ध. Read Nav Manch weekly e-paper, Marathi newspaper digital edition.';
+  const seoUrl = 'https://navmanchnews.com/epaper2';
+  const seoImage = 'https://navmanchnews.com/logo1.png';
+
+  // Structured data for Newspaper/Periodical (Weekly)
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": seoUrl,
+    "name": "नव मंच ई-पेपर",
+    "alternateName": "Nav Manch E-Paper",
+    "description": seoDescription,
+    "url": seoUrl,
+    "publisher": {
+      "@type": "NewsMediaOrganization",
+      "name": "नव मंच",
+      "alternateName": "Nav Manch",
+      "url": "https://navmanchnews.com",
+      "logo": {
+        "@type": "ImageObject",
+        "url": seoImage
+      }
+    },
+    "mainEntity": {
+      "@type": "ItemList",
+      "numberOfItems": epapers.length,
+      "itemListElement": epapers.slice(0, 10).map((epaper, index) => {
+        const epaperId = epaper.id !== undefined ? String(epaper.id) : (epaper._id ? String(epaper._id) : null);
+        const epaperIdentifier = epaper.slug || epaperId;
+        return {
+          "@type": "ListItem",
+          "position": index + 1,
+          "item": {
+            "@type": "Newspaper",
+            "@id": `https://navmanchnews.com/epaper/${epaperIdentifier}`,
+            "name": epaper.title,
+            "datePublished": epaper.date ? new Date(epaper.date).toISOString() : undefined,
+            "url": `https://navmanchnews.com/epaper/${epaperIdentifier}`,
+            "frequency": "Weekly"
+          }
+        };
+      })
+    },
+    "inLanguage": "mr",
+    "isAccessibleForFree": true
+  };
+
   return (
-    <div className="min-h-screen bg-subtleGray">
+    <>
+      <SEO 
+        title={seoTitle}
+        description={seoDescription}
+        image={seoImage}
+        url={seoUrl}
+        type="website"
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      <div className="min-h-screen bg-subtleGray">
       {/* Section Header */}
       <div className="bg-cleanWhite border-b-2 border-subtleGray py-4">
         <div className="container mx-auto px-4">

@@ -74,35 +74,40 @@ Sitemap: https://navmanchnews.com/sitemap.xml`);
 });
 
 // Proxy sitemap request to backend (MUST be before static files)
+// This route MUST be defined before static files middleware
 app.get('/sitemap.xml', async (req, res) => {
+  console.log('📄 Sitemap request received');
   try {
     const backendUrl = BACKEND_URL || 'https://navmanch-backend.onrender.com';
-    console.log(`Fetching sitemap from: ${backendUrl}/sitemap.xml`);
+    const sitemapUrl = `${backendUrl}/sitemap.xml`;
+    console.log(`🔄 Fetching sitemap from backend: ${sitemapUrl}`);
     
-    const response = await fetch(`${backendUrl}/sitemap.xml`, {
+    const response = await fetch(sitemapUrl, {
       headers: {
         'Accept': 'application/xml, text/xml, */*',
       }
     });
     
     if (!response.ok) {
-      console.error(`Backend responded with status: ${response.status}`);
+      console.error(`❌ Backend responded with status: ${response.status}`);
       throw new Error(`Backend responded with ${response.status}`);
     }
     
     const xml = await response.text();
+    console.log(`✅ Received sitemap, length: ${xml.length} bytes`);
     
     // Validate it's actually XML
     if (!xml.trim().startsWith('<?xml') && !xml.trim().startsWith('<urlset')) {
-      console.error('Backend returned non-XML content:', xml.substring(0, 200));
+      console.error('❌ Backend returned non-XML content:', xml.substring(0, 200));
       throw new Error('Backend returned invalid XML');
     }
     
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
     res.send(xml);
+    console.log('✅ Sitemap sent successfully');
   } catch (error) {
-    console.error('Error fetching sitemap:', error.message);
+    console.error('❌ Error fetching sitemap:', error.message);
     // Return a basic sitemap instead of failing completely
     const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -112,9 +117,22 @@ app.get('/sitemap.xml', async (req, res) => {
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+  <url>
+    <loc>https://navmanchnews.com/epaper</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://navmanchnews.com/epaper2</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
 </urlset>`;
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.status(200).send(fallbackSitemap);
+    console.log('⚠️  Sent fallback sitemap');
   }
 });
 

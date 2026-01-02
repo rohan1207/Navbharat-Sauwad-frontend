@@ -1,0 +1,16 @@
+# Apache .htaccess for GoDaddy Static Hosting
+# Redirects sitemap.xml to backend (always fresh)
+
+RewriteEngine On
+
+# Redirect sitemap.xml to backend (302 temporary redirect - Google will follow)
+RewriteRule ^sitemap\.xml$ https://navmanch-backend.onrender.com/sitemap.xml [R=302,L]
+
+# Optional: Redirect robots.txt if needed
+# RewriteRule ^robots\.txt$ https://navmanch-backend.onrender.com/robots.txt [R=302,L]
+
+# React Router - Serve index.html for all routes
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.html [L]
+
