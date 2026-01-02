@@ -73,23 +73,48 @@ Sitemap: https://navmanchnews.com/sitemap.xml`);
   }
 });
 
-// Proxy sitemap request to backend
+// Proxy sitemap request to backend (MUST be before static files)
 app.get('/sitemap.xml', async (req, res) => {
   try {
     const backendUrl = BACKEND_URL || 'https://navmanch-backend.onrender.com';
-    const response = await fetch(`${backendUrl}/sitemap.xml`);
+    console.log(`Fetching sitemap from: ${backendUrl}/sitemap.xml`);
+    
+    const response = await fetch(`${backendUrl}/sitemap.xml`, {
+      headers: {
+        'Accept': 'application/xml, text/xml, */*',
+      }
+    });
     
     if (!response.ok) {
+      console.error(`Backend responded with status: ${response.status}`);
       throw new Error(`Backend responded with ${response.status}`);
     }
     
     const xml = await response.text();
-    res.setHeader('Content-Type', 'application/xml');
+    
+    // Validate it's actually XML
+    if (!xml.trim().startsWith('<?xml') && !xml.trim().startsWith('<urlset')) {
+      console.error('Backend returned non-XML content:', xml.substring(0, 200));
+      throw new Error('Backend returned invalid XML');
+    }
+    
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
     res.send(xml);
   } catch (error) {
-    console.error('Error fetching sitemap:', error);
-    res.status(500).send('Error loading sitemap');
+    console.error('Error fetching sitemap:', error.message);
+    // Return a basic sitemap instead of failing completely
+    const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://navmanchnews.com/</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>`;
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.status(200).send(fallbackSitemap);
   }
 });
 
