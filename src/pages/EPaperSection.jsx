@@ -498,8 +498,8 @@ const EPaperSection = () => {
       let logoAreaHeight = 0;
       
       if (logoImg.complete && logoImg.naturalWidth > 0) {
-        // Logo size: 12% of section width or max 100px height
-        logoHeight = Math.min(sectionImg.width * 0.12, 100);
+        // Logo size: 18% of section width or max 150px height (increased from 15% and 120px)
+        logoHeight = Math.min(sectionImg.width * 0.18, 150);
         const logoAspectRatio = logoImg.width / logoImg.height;
         logoWidth = logoHeight * logoAspectRatio;
         logoAreaHeight = logoHeight + 40; // Logo height + padding (20px top + 20px bottom)
@@ -514,7 +514,7 @@ const EPaperSection = () => {
       const footerFontSize = Math.max(12, Math.min(sectionImg.width * 0.02, 16)); // Responsive font size
       
       // Prepare footer text
-      const websiteUrl = 'navmanch.com/epapers';
+      const websiteUrl = 'navmanchnews.com/epapers';
       const dateText = `तारीख: ${formatDate(epaper?.date || '')}`;
       const epaperText = `ई-पेपर: ${getCleanEpaperTitle()}`;
       const pageText = `पृष्ठ: ${page?.pageNo || ''}`;
@@ -720,7 +720,7 @@ const EPaperSection = () => {
                     <img
                       src="/logo1.png"
                       alt="नव मंच"
-                      className="h-16 md:h-20 w-auto"
+                      className="h-24 md:h-28 w-auto"
                     />
                   </div>
                   
@@ -768,7 +768,7 @@ const EPaperSection = () => {
                 {/* Website URL */}
                 <div className="text-center mb-4">
                   <p className="text-xs md:text-sm text-metaGray font-medium tracking-wide">
-                    navmanch.com/epapers
+                    navmanchnews.com/epapers
                   </p>
                 </div>
                 
@@ -802,7 +802,7 @@ const EPaperSection = () => {
                 <img
                   src="/logo1.png"
                   alt="नव मंच"
-                  className="h-12 w-auto"
+                  className="h-20 w-auto"
                 />
               </div>
               
@@ -830,7 +830,7 @@ const EPaperSection = () => {
                 {/* Website URL */}
                 <div className="text-center mb-3">
                   <p className="text-xs text-metaGray font-medium tracking-wide">
-                    navmanch.com/epapers
+                    navmanchnews.com/epapers
                   </p>
                 </div>
                 
