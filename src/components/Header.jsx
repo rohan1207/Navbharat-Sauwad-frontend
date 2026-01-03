@@ -1,29 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import SubscribePopup from './SubscribePopup';
 import { useHeader } from '../context/HeaderContext';
 import { FaEye, FaChartLine } from 'react-icons/fa';
 import { isSubscribed, getSubscriberInitial, getSubscription } from '../utils/subscription';
+import { getStats, initStats } from '../utils/stats';
 
 const Header = () => {
   const [isSubscribeOpen, setIsSubscribeOpen] = useState(false);
   const [subscription, setSubscription] = useState(null);
   const { isHeaderVisible, headerRef } = useHeader();
   const location = useLocation();
-  const [stats, setStats] = useState({
-    totalVisits: 0,
-    visitsToday: 0,
-    totalHits: 0,
-    hitsToday: 0
+  // Initialize stats on component mount
+  const [stats, setStats] = useState(() => {
+    // Initialize stats from localStorage (before incrementing)
+    const storedStats = getStats();
+    return storedStats;
   });
 
-  // Target values for animation
-  const targetStats = {
-    totalVisits: 120,
-    visitsToday: 85,
-    totalHits: 250,
-    hitsToday: 180
-  };
+  const previousStatsRef = useRef(stats);
+  const isAnimatingRef = useRef(false);
+
+  // Initialize and increment stats on mount
+  useEffect(() => {
+    // Increment stats on page load
+    initStats();
+  }, []);
   
   const currentDate = new Date().toLocaleDateString('mr-IN', {
     day: 'numeric',
@@ -90,57 +92,85 @@ const Header = () => {
     };
   }, [isSubscribeOpen, location, subscription]);
 
-  // Animate stats from 0 to target values with 3 second delay
+  // Load stats and animate on updates
   useEffect(() => {
-    const delay = 3000; // 3 seconds delay
-    const duration = 1500; // 1.5 seconds animation duration
+    const delay = 500; // Small delay before animation
+    const duration = 1000; // 1 second animation duration
     
-    // Wait 3 seconds before starting animation
-    const timeoutId = setTimeout(() => {
-      const startTime = Date.now();
-      const startValues = { ...stats };
+    const loadAndAnimateStats = () => {
+      if (isAnimatingRef.current) return; // Don't start new animation while one is running
+      
+      const targetValues = getStats();
+      const startValues = { ...previousStatsRef.current };
+      
+      // Only animate if values changed
+      const hasChanged = 
+        startValues.totalVisits !== targetValues.totalVisits ||
+        startValues.visitsToday !== targetValues.visitsToday ||
+        startValues.totalHits !== targetValues.totalHits ||
+        startValues.hitsToday !== targetValues.hitsToday;
+      
+      if (!hasChanged) {
+        previousStatsRef.current = targetValues;
+        return;
+      }
+      
+      isAnimatingRef.current = true;
+      
+      const timeoutId = setTimeout(() => {
+        const startTime = Date.now();
 
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        
-        // Easing function for smooth animation (ease-out)
-        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const animate = () => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          
+          // Easing function for smooth animation (ease-out)
+          const easeOut = 1 - Math.pow(1 - progress, 3);
 
-        setStats({
-          totalVisits: Math.floor(startValues.totalVisits + (targetStats.totalVisits - startValues.totalVisits) * easeOut),
-          visitsToday: Math.floor(startValues.visitsToday + (targetStats.visitsToday - startValues.visitsToday) * easeOut),
-          totalHits: Math.floor(startValues.totalHits + (targetStats.totalHits - startValues.totalHits) * easeOut),
-          hitsToday: Math.floor(startValues.hitsToday + (targetStats.hitsToday - startValues.hitsToday) * easeOut)
-        });
+          setStats({
+            totalVisits: Math.floor(startValues.totalVisits + (targetValues.totalVisits - startValues.totalVisits) * easeOut),
+            visitsToday: Math.floor(startValues.visitsToday + (targetValues.visitsToday - startValues.visitsToday) * easeOut),
+            totalHits: Math.floor(startValues.totalHits + (targetValues.totalHits - startValues.totalHits) * easeOut),
+            hitsToday: Math.floor(startValues.hitsToday + (targetValues.hitsToday - startValues.hitsToday) * easeOut)
+          });
 
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        } else {
-          // Ensure final values are exactly the target values
-          setStats({ ...targetStats });
-        }
-      };
+          if (progress < 1) {
+            requestAnimationFrame(animate);
+          } else {
+            // Ensure final values match target
+            setStats(targetValues);
+            previousStatsRef.current = targetValues;
+            isAnimatingRef.current = false;
+          }
+        };
 
-      requestAnimationFrame(animate);
-    }, delay);
-
-    // Cleanup timeout on unmount
-    return () => clearTimeout(timeoutId);
-  }, []); // Run only once on mount
-
-  // TODO: Fetch real stats from API
-  // useEffect(() => {
-  //   const fetchStats = async () => {
-  //     try {
-  //       const data = await apiFetch('/stats');
-  //       if (data) setStats(data);
-  //     } catch (error) {
-  //       console.error('Error fetching stats:', error);
-  //     }
-  //   };
-  //   fetchStats();
-  // }, []);
+        requestAnimationFrame(animate);
+      }, delay);
+      
+      return () => clearTimeout(timeoutId);
+    };
+    
+    // Initial load with animation
+    const cleanup = loadAndAnimateStats();
+    
+    // Listen for stats updates
+    const handleStatsUpdate = () => {
+      loadAndAnimateStats();
+    };
+    
+    window.addEventListener('statsUpdated', handleStatsUpdate);
+    
+    // Also check for updates periodically (every 2 seconds)
+    const intervalId = setInterval(() => {
+      loadAndAnimateStats();
+    }, 2000);
+    
+    return () => {
+      if (cleanup) cleanup();
+      window.removeEventListener('statsUpdated', handleStatsUpdate);
+      clearInterval(intervalId);
+    };
+  }, []);
 
   return (
     <>
