@@ -1,20 +1,48 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { FaChevronUp, FaChevronDown, FaArrowLeft } from 'react-icons/fa';
 import { loadEpapers } from '../utils/epaperLoader';
 import EPaperPage2 from '../components/EPaperPage2';
 import ShareButtons from '../components/ShareButtons';
 import SEO from '../components/SEO';
+import { isSubscribed } from '../utils/subscription';
+import SubscribePopup from '../components/SubscribePopup';
 
 const EPaperViewer = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [epaper, setEpaper] = useState(null);
   const [selectedPage, setSelectedPage] = useState(null);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [showSubscribePopup, setShowSubscribePopup] = useState(false);
   const sidebarRef = useRef(null);
   const mainContentRef = useRef(null);
+  
+  // Check if it's a shared link
+  const isSharedLink = location.search.includes('shared=true');
+
+  // Check subscription on load (unless shared link)
+  useEffect(() => {
+    if (!isSharedLink && !isSubscribed()) {
+      setShowSubscribePopup(true);
+    }
+  }, [isSharedLink]);
+
+  // Listen for subscription updates
+  useEffect(() => {
+    const handleSubscriptionUpdate = () => {
+      if (isSubscribed()) {
+        setShowSubscribePopup(false);
+      }
+    };
+    
+    window.addEventListener('subscriptionUpdated', handleSubscriptionUpdate);
+    return () => {
+      window.removeEventListener('subscriptionUpdated', handleSubscriptionUpdate);
+    };
+  }, []);
 
   // Don't prevent body scroll - allow normal scrolling on mobile
   // Users need to scroll to see all pages stacked one below the other
@@ -298,6 +326,13 @@ const EPaperViewer = () => {
           </div>
         </div>
       </div>
+      
+      {/* Subscribe Popup */}
+      <SubscribePopup 
+        isOpen={showSubscribePopup} 
+        onClose={() => setShowSubscribePopup(false)}
+        allowClose={false} // Don't allow close - user must subscribe
+      />
     </>
   );
 };

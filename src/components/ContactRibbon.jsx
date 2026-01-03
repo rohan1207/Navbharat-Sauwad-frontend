@@ -10,7 +10,7 @@ const ContactRibbon = () => {
           <div className="flex items-center gap-3 md:gap-5 flex-wrap justify-center">
             {/* Ads & News Contact Label */}
             <div className="flex items-center gap-2 bg-red-800/80 px-2.5 py-1 rounded border border-red-700/30">
-              <span className="text-cleanWhite text-xs md:text-sm font-semibold uppercase tracking-wide whitespace-nowrap">
+              <span className="text-cleanWhite text-sm md:text-base font-semibold uppercase tracking-wide whitespace-nowrap">
                 <span className="hidden md:inline">जाहिरात आणि बातम्या संपर्क</span>
                 <span className="md:hidden">संपर्क</span>
               </span>
@@ -21,8 +21,8 @@ const ContactRibbon = () => {
               href="tel:+919158578008"
               className="flex items-center gap-1.5 text-cleanWhite hover:text-yellow-200 transition-colors duration-200 group"
             >
-              <FaPhone className="text-xs md:text-sm group-hover:scale-105 transition-transform duration-200" />
-              <span className="text-xs md:text-sm font-medium whitespace-nowrap">
+              <FaPhone className="text-sm md:text-base group-hover:scale-105 transition-transform duration-200" />
+              <span className="text-sm md:text-base font-medium whitespace-nowrap">
                 <span className="hidden sm:inline">मो. नं.: </span>
                 <span className="font-semibold">९१५८५७८००८</span>
               </span>
@@ -33,8 +33,8 @@ const ContactRibbon = () => {
               href="mailto:navmanch25@gmail.com"
               className="flex items-center gap-1.5 text-cleanWhite hover:text-yellow-200 transition-colors duration-200 group"
             >
-              <FaEnvelope className="text-xs md:text-sm group-hover:scale-105 transition-transform duration-200" />
-              <span className="text-xs md:text-sm font-medium whitespace-nowrap truncate max-w-[180px] md:max-w-none">
+              <FaEnvelope className="text-sm md:text-base group-hover:scale-105 transition-transform duration-200" />
+              <span className="text-sm md:text-base font-medium whitespace-nowrap truncate max-w-[180px] md:max-w-none">
                 <span className="hidden sm:inline">ईमेल: </span>
                 <span className="font-semibold">navmanch25@gmail.com</span>
               </span>
@@ -45,9 +45,9 @@ const ContactRibbon = () => {
               href="https://wa.me/919158578008"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 bg-green-500/90 hover:bg-green-500 text-cleanWhite px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200 shadow-sm hover:shadow cursor-pointer"
+              className="flex items-center gap-1.5 bg-green-500/90 hover:bg-green-500 text-cleanWhite px-2.5 py-1 rounded-full text-sm md:text-base font-medium transition-all duration-200 shadow-sm hover:shadow cursor-pointer"
             >
-              <FaWhatsapp className="text-xs md:text-sm" />
+              <FaWhatsapp className="text-sm md:text-base" />
               <span className="hidden sm:inline">WhatsApp</span>
             </a>
           </div>
@@ -58,4 +58,3 @@ const ContactRibbon = () => {
 };
 
 export default ContactRibbon;
-

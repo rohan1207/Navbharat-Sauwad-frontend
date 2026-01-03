@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { FaArrowLeft, FaDownload } from 'react-icons/fa';
 import { loadEpapers } from '../utils/epaperLoader';
 import ShareButtons from '../components/ShareButtons';
 import SEO from '../components/SEO';
+import { isSubscribed } from '../utils/subscription';
+import SubscribePopup from '../components/SubscribePopup';
 
 // Mobile zoomable image component for sections
 const SectionZoomableImage = ({ imageUrl, alt }) => {
@@ -158,12 +160,17 @@ const SectionZoomableImage = ({ imageUrl, alt }) => {
 const EPaperSection = () => {
   const { id, pageNo, sectionId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [epaper, setEpaper] = useState(null);
   const [page, setPage] = useState(null);
   const [section, setSection] = useState(null);
   const [croppedImageUrl, setCroppedImageUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [showSubscribePopup, setShowSubscribePopup] = useState(false);
+  
+  // Check if it's a shared link
+  const isSharedLink = location.search.includes('shared=true');
 
   // Track window size for responsive image sizing
   useEffect(() => {
@@ -173,6 +180,27 @@ const EPaperSection = () => {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Check subscription on load (unless shared link)
+  useEffect(() => {
+    if (!isSharedLink && !isSubscribed()) {
+      setShowSubscribePopup(true);
+    }
+  }, [isSharedLink]);
+
+  // Listen for subscription updates
+  useEffect(() => {
+    const handleSubscriptionUpdate = () => {
+      if (isSubscribed()) {
+        setShowSubscribePopup(false);
+      }
+    };
+    
+    window.addEventListener('subscriptionUpdated', handleSubscriptionUpdate);
+    return () => {
+      window.removeEventListener('subscriptionUpdated', handleSubscriptionUpdate);
+    };
   }, []);
 
   // Prevent body scroll on mobile when viewing section
@@ -430,6 +458,12 @@ const EPaperSection = () => {
 
   // Download section image with logo on top
   const downloadSectionWithLogo = async (sectionImageUrl, sectionTitle) => {
+    // Check subscription before allowing download
+    if (!isSharedLink && !isSubscribed()) {
+      setShowSubscribePopup(true);
+      return;
+    }
+    
     try {
       // Load section image
       const sectionImg = new Image();
@@ -474,9 +508,24 @@ const EPaperSection = () => {
         logoAreaHeight = 0;
       }
 
-      // Set canvas size: section width, extended height (section + logo area)
+      // Calculate footer dimensions
+      const footerPadding = 20; // Top and bottom padding
+      const footerLineHeight = 20; // Line height for text
+      const footerFontSize = Math.max(12, Math.min(sectionImg.width * 0.02, 16)); // Responsive font size
+      
+      // Prepare footer text
+      const websiteUrl = 'navmanch.com/epapers';
+      const dateText = `तारीख: ${formatDate(epaper?.date || '')}`;
+      const epaperText = `ई-पेपर: ${getCleanEpaperTitle()}`;
+      const pageText = `पृष्ठ: ${page?.pageNo || ''}`;
+      
+      // Calculate footer height
+      // Website URL (1 line) + spacing + metadata (3 lines) + padding
+      const footerHeight = footerLineHeight + 8 + (footerLineHeight * 3) + (footerPadding * 2);
+
+      // Set canvas size: section width, extended height (section + logo area + footer)
       canvas.width = sectionImg.width;
-      canvas.height = sectionImg.height + logoAreaHeight;
+      canvas.height = sectionImg.height + logoAreaHeight + footerHeight;
 
       // Fill white background
       ctx.fillStyle = '#FFFFFF';
@@ -484,6 +533,44 @@ const EPaperSection = () => {
 
       // Draw section image below logo area
       ctx.drawImage(sectionImg, 0, logoAreaHeight);
+
+      // Draw footer at the bottom
+      const footerY = sectionImg.height + logoAreaHeight;
+      
+      // Set font properties - Use system fonts that support Devanagari
+      ctx.font = `bold ${footerFontSize}px 'Mukta', 'Noto Sans Devanagari', 'Tiro Devanagari Hindi', 'Hind', Arial, sans-serif`;
+      ctx.fillStyle = '#666666'; // Gray color for metadata
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      
+      // Draw website URL
+      ctx.fillStyle = '#666666';
+      ctx.font = `${footerFontSize}px 'Mukta', 'Noto Sans Devanagari', Arial, sans-serif`;
+      ctx.fillText(websiteUrl, canvas.width / 2, footerY + footerPadding);
+      
+      // Draw metadata lines
+      const metadataY = footerY + footerPadding + footerLineHeight + 8;
+      ctx.fillStyle = '#333333'; // Darker for metadata labels
+      ctx.font = `bold ${footerFontSize}px 'Mukta', 'Noto Sans Devanagari', 'Tiro Devanagari Hindi', 'Hind', Arial, sans-serif`;
+      
+      // Date
+      ctx.fillText(dateText, canvas.width / 2, metadataY);
+      
+      // E-Paper title (may need to truncate if too long)
+      const maxEpaperWidth = canvas.width * 0.9;
+      let epaperDisplayText = epaperText;
+      let epaperMetrics = ctx.measureText(epaperDisplayText);
+      if (epaperMetrics.width > maxEpaperWidth) {
+        // Truncate if too long
+        while (ctx.measureText(epaperDisplayText + '...').width > maxEpaperWidth && epaperDisplayText.length > 0) {
+          epaperDisplayText = epaperDisplayText.slice(0, -1);
+        }
+        epaperDisplayText += '...';
+      }
+      ctx.fillText(epaperDisplayText, canvas.width / 2, metadataY + footerLineHeight);
+      
+      // Page number
+      ctx.fillText(pageText, canvas.width / 2, metadataY + (footerLineHeight * 2));
 
       // Draw logo above the clip (centered)
       if (logoImg.complete && logoImg.naturalWidth > 0 && logoAreaHeight > 0) {
@@ -663,41 +750,44 @@ const EPaperSection = () => {
               )}
             </div>
             
-            {/* Download Button - Desktop */}
-            <div className="bg-cleanWhite flex items-center justify-center py-4">
-              <button
-                onClick={() => downloadSectionWithLogo(croppedImageUrl || page.image, getCleanSectionTitle())}
-                className="flex items-center gap-2 px-6 py-3 bg-newsRed text-white rounded-lg font-semibold hover:bg-newsRed/90 transition-colors shadow-md hover:shadow-lg"
-              >
-                <FaDownload className="w-4 h-4" />
-                <span>क्लिप डाउनलोड करा</span>
-              </button>
-            </div>
-            
-            {/* Footer Section */}
-            <div className="bg-gradient-to-b from-subtleGray/10 to-cleanWhite pt-4 pb-6 rounded-b-xl">
-              {/* Website URL */}
-              <div className="text-center mb-4">
-                <p className="text-xs md:text-sm text-metaGray font-medium tracking-wide">
-                  navmanch.com/epapers
-                </p>
+            {/* Download Button and Footer Section - Inside clip container */}
+            <div className="bg-cleanWhite rounded-b-xl pt-4 pb-6">
+              {/* Download Button */}
+              <div className="flex items-center justify-center py-4">
+                <button
+                  onClick={() => downloadSectionWithLogo(croppedImageUrl || page.image, getCleanSectionTitle())}
+                  className="flex items-center gap-2 px-6 py-3 bg-newsRed text-white rounded-lg font-semibold hover:bg-newsRed/90 transition-colors shadow-md hover:shadow-lg"
+                >
+                  <FaDownload className="w-4 h-4" />
+                  <span>क्लिप डाउनलोड करा</span>
+                </button>
               </div>
               
-              {/* Metadata */}
-              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 px-4 text-xs md:text-sm text-metaGray">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-deepCharcoal">तारीख:</span>
-                  <span>{formatDate(epaper.date)}</span>
+              {/* Footer Section - Metadata */}
+              <div className="bg-gradient-to-b from-subtleGray/10 to-cleanWhite pt-4 pb-4">
+                {/* Website URL */}
+                <div className="text-center mb-4">
+                  <p className="text-xs md:text-sm text-metaGray font-medium tracking-wide">
+                    navmanch.com/epapers
+                  </p>
                 </div>
-                <div className="hidden md:block w-px h-4 bg-subtleGray"></div>
+                
+                {/* Metadata */}
+                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 px-4 text-xs md:text-sm text-metaGray">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-deepCharcoal">तारीख:</span>
+                    <span>{formatDate(epaper.date)}</span>
+                  </div>
+                  <div className="hidden md:block w-px h-4 bg-subtleGray"></div>
                   <div className="flex items-center gap-1.5">
                     <span className="font-semibold text-deepCharcoal">ई-पेपर:</span>
                     <span className="max-w-[200px] truncate">{getCleanEpaperTitle()}</span>
                   </div>
-                <div className="hidden md:block w-px h-4 bg-subtleGray"></div>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-deepCharcoal">पृष्ठ:</span>
-                  <span>{page.pageNo}</span>
+                  <div className="hidden md:block w-px h-4 bg-subtleGray"></div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-deepCharcoal">पृष्ठ:</span>
+                    <span>{page.pageNo}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -725,20 +815,53 @@ const EPaperSection = () => {
               </div>
             </div>
             
-            {/* Mobile Download Button - Below container, outside clip */}
+            {/* Mobile Download Button and Footer - Inside clip container */}
             <div className="w-full bg-cleanWhite px-4 py-4 pb-6">
               <button
                 onClick={() => downloadSectionWithLogo(croppedImageUrl || page.image, getCleanSectionTitle())}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-newsRed text-white rounded-lg font-semibold hover:bg-newsRed/90 transition-colors shadow-lg"
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-newsRed text-white rounded-lg font-semibold hover:bg-newsRed/90 transition-colors shadow-lg mb-4"
               >
                 <FaDownload className="w-5 h-5" />
                 <span>क्लिप डाउनलोड करा</span>
               </button>
+              
+              {/* Footer Section - Metadata */}
+              <div className="bg-gradient-to-b from-subtleGray/10 to-cleanWhite pt-4 pb-4">
+                {/* Website URL */}
+                <div className="text-center mb-3">
+                  <p className="text-xs text-metaGray font-medium tracking-wide">
+                    navmanch.com/epapers
+                  </p>
+                </div>
+                
+                {/* Metadata */}
+                <div className="flex flex-col items-center gap-2 px-2 text-xs text-metaGray">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-deepCharcoal">तारीख:</span>
+                    <span>{formatDate(epaper.date)}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-deepCharcoal">ई-पेपर:</span>
+                    <span className="text-center">{getCleanEpaperTitle()}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-deepCharcoal">पृष्ठ:</span>
+                    <span>{page.pageNo}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
         </div>
       </div>
+      
+      {/* Subscribe Popup */}
+      <SubscribePopup 
+        isOpen={showSubscribePopup} 
+        onClose={() => setShowSubscribePopup(false)}
+        allowClose={false} // Don't allow close - user must subscribe
+      />
     </>
   );
 };

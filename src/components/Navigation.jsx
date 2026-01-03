@@ -140,10 +140,10 @@ const Navigation = () => {
                 <Link
                   key={cat.id}
                   to={cat.path}
-                  className={`px-4 py-2 text-sm font-medium transition-all duration-300 relative group ${
+                  className={`px-4 py-2 text-base font-bold transition-all duration-300 relative group ${
                     isActive(cat.path)
-                      ? 'text-gray-900'
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'text-gray-950'
+                      : 'text-gray-800 hover:text-gray-950'
                   }`}
                   style={{ 
                     fontFamily: "'Mukta', 'Noto Sans Devanagari', 'Tiro Devanagari Hindi', 'Hind', system-ui, sans-serif",
@@ -227,10 +227,10 @@ const Navigation = () => {
                     key={cat.id}
                     to={cat.path}
                     onClick={() => setIsMenuOpen(false)}
-                    className={`block px-3 py-2.5 sm:py-2 text-xs sm:text-sm font-medium transition-all duration-300 rounded-md group touch-manipulation ${
+                    className={`block px-3 py-2.5 sm:py-2 text-sm sm:text-base font-bold transition-all duration-300 rounded-md group touch-manipulation ${
                       isActive(cat.path)
-                        ? 'text-red-600 bg-red-50'
-                        : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100'
+                        ? 'text-red-700 bg-red-50'
+                        : 'text-gray-800 hover:text-gray-950 hover:bg-gray-50 active:bg-gray-100'
                     }`}
                   >
                     <span className="flex items-center justify-between">
@@ -253,10 +253,10 @@ const Navigation = () => {
                     key={page.path}
                     to={page.path}
                     onClick={() => setIsMenuOpen(false)}
-                    className={`block px-3 py-2.5 sm:py-2 text-xs sm:text-sm font-medium transition-all duration-300 rounded-md group touch-manipulation ${
+                    className={`block px-3 py-2.5 sm:py-2 text-sm sm:text-base font-bold transition-all duration-300 rounded-md group touch-manipulation ${
                       isActive(page.path)
-                        ? 'text-red-600 bg-red-50'
-                        : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100'
+                        ? 'text-red-700 bg-red-50'
+                        : 'text-gray-800 hover:text-gray-950 hover:bg-gray-50 active:bg-gray-100'
                     }`}
                   >
                     <span className="flex items-center justify-between">

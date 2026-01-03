@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import SubscribePopup from './SubscribePopup';
 import { useHeader } from '../context/HeaderContext';
 import { FaEye, FaChartLine } from 'react-icons/fa';
+import { isSubscribed, getSubscriberInitial, getSubscription } from '../utils/subscription';
 
 const Header = () => {
   const [isSubscribeOpen, setIsSubscribeOpen] = useState(false);
+  const [subscription, setSubscription] = useState(null);
   const { isHeaderVisible, headerRef } = useHeader();
+  const location = useLocation();
   const [stats, setStats] = useState({
     totalVisits: 0,
     visitsToday: 0,
@@ -27,6 +30,65 @@ const Header = () => {
     month: 'long',
     year: 'numeric'
   });
+
+  // Check subscription status
+  useEffect(() => {
+    const checkSubscription = () => {
+      const sub = getSubscription();
+      setSubscription(sub);
+    };
+    
+    checkSubscription();
+    
+    // Listen for subscription updates
+    const handleSubscriptionUpdate = () => {
+      checkSubscription();
+    };
+    
+    window.addEventListener('subscriptionUpdated', handleSubscriptionUpdate);
+    return () => {
+      window.removeEventListener('subscriptionUpdated', handleSubscriptionUpdate);
+    };
+  }, []);
+
+  // Scroll detection for popup
+  useEffect(() => {
+    // Check if it's a shared epaper link - allow reading without subscription
+    const isSharedLink = location.search.includes('shared=true') || 
+                         location.pathname.includes('/epaper/');
+    
+    // Don't show popup if already subscribed or if it's a shared link
+    if (isSubscribed() || isSharedLink) return;
+    
+    let scrollCount = 0;
+    let lastScrollTop = 0;
+    
+    const handleScroll = () => {
+      // Check again if subscribed (in case user subscribed while scrolling)
+      if (isSubscribed()) {
+        window.removeEventListener('scroll', handleScroll);
+        return;
+      }
+      
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      
+      // Detect actual scroll (not just page load)
+      if (Math.abs(scrollTop - lastScrollTop) > 50) {
+        scrollCount++;
+        lastScrollTop = scrollTop;
+        
+        if (scrollCount >= 2 && !isSubscribed() && !isSubscribeOpen) {
+          setIsSubscribeOpen(true);
+          window.removeEventListener('scroll', handleScroll);
+        }
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [isSubscribeOpen, location, subscription]);
 
   // Animate stats from 0 to target values with 3 second delay
   useEffect(() => {
@@ -96,7 +158,7 @@ const Header = () => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Mobile Header - Logo, Date, Buttons (Now First) */}
-          <div className="flex items-center justify-between py-2.5 md:hidden gap-2">
+          <div className="flex items-center justify-between py-3 md:hidden gap-2">
             <div className="flex flex-col min-w-0 flex-shrink">
               <span className="text-[10px] text-metaGray leading-tight whitespace-nowrap">
                 {currentDate}
@@ -107,7 +169,7 @@ const Header = () => {
               <img
                 src="/logo1.png"
                 alt="नव मंच"
-                className="h-16 sm:h-20 w-auto"
+                className="h-20 sm:h-24 w-auto"
               />
             </Link>
 
@@ -118,17 +180,23 @@ const Header = () => {
               >
                 ई-पेपर
               </Link>
-              <button
-                onClick={() => setIsSubscribeOpen(true)}
-                className="px-2.5 py-1.5 rounded-full bg-newsRed text-cleanWhite text-[10px] sm:text-xs font-semibold tracking-wide hover:bg-newsRed/90 transition-all duration-300 shadow-sm hover:shadow-md whitespace-nowrap"
-              >
-                सबस्क्राईब
-              </button>
+              {subscription ? (
+                <div className="w-8 h-8 rounded-full bg-newsRed text-cleanWhite flex items-center justify-center text-sm font-bold shadow-md">
+                  {getSubscriberInitial()}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsSubscribeOpen(true)}
+                  className="px-2.5 py-1.5 rounded-full bg-newsRed text-cleanWhite text-[10px] sm:text-xs font-semibold tracking-wide hover:bg-newsRed/90 transition-all duration-300 shadow-sm hover:shadow-md whitespace-nowrap"
+                >
+                  सबस्क्राईब
+                </button>
+              )}
             </div>
           </div>
 
           {/* Desktop / Tablet Header - Logo, Date, Buttons (Now First) */}
-          <div className="hidden md:flex items-center justify-between py-2 h-[80px] min-h-[80px]">
+          <div className="hidden md:flex items-center justify-between py-2 h-auto min-h-[90px]">
             {/* Left: Date */}
             <div className="flex items-center">
               <span className="text-sm text-slateBody font-light tracking-wide">
@@ -144,7 +212,7 @@ const Header = () => {
               <img
                 src="/logo1.png"
                 alt="नव मंच"
-                className="h-20 md:h-24 w-auto"
+                className="h-24 md:h-28 w-auto"
               />
             </Link>
 
@@ -156,17 +224,23 @@ const Header = () => {
               >
                 ई-पेपर
               </Link>
-              <button
-                onClick={() => setIsSubscribeOpen(true)}
-                className="bg-newsRed text-cleanWhite px-5 py-2 text-sm font-semibold uppercase tracking-wider hover:bg-newsRed/80 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 rounded-full"
-              >
-                सबस्क्राईब करा
-              </button>
+              {subscription ? (
+                <div className="w-10 h-10 rounded-full bg-newsRed text-cleanWhite flex items-center justify-center text-lg font-bold shadow-md">
+                  {getSubscriberInitial()}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsSubscribeOpen(true)}
+                  className="bg-newsRed text-cleanWhite px-5 py-2 text-sm font-semibold uppercase tracking-wider hover:bg-newsRed/80 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 rounded-full"
+                >
+                  सबस्क्राईब करा
+                </button>
+              )}
             </div>
           </div>
 
           {/* Top Info Bar - Desktop (Now Second) */}
-          <div className="hidden md:flex items-center justify-between py-2.5 px-4 bg-gradient-to-r from-subtleGray/40 to-subtleGray/20 border-b border-subtleGray/60">
+          <div className="hidden md:flex items-center justify-between py-1.5 px-4 bg-gradient-to-r from-subtleGray/40 to-subtleGray/20 border-b border-subtleGray/60">
             <div className="flex items-center gap-6 text-xs">
               <div className="flex items-center gap-2">
                 <span className="text-metaGray font-semibold tracking-wide">PRGI Reg No:</span>
@@ -174,7 +248,7 @@ const Header = () => {
               </div>
               <div className="hidden lg:flex items-center gap-2">
                 <span className="text-metaGray font-semibold tracking-wide">Chief Editor:</span>
-                <span className="text-deepCharcoal font-semibold">शिवानी रोहन सुरवसे पाटील</span>
+                <span className="text-deepCharcoal font-semibold">शिवानी सुरवसे पाटील</span>
               </div>
             </div>
 
@@ -236,7 +310,7 @@ const Header = () => {
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-metaGray font-semibold">Chief Editor:</span>
-                <span className="text-deepCharcoal font-semibold">शिवानी रोहन सुरवसे पाटील</span>
+                <span className="text-deepCharcoal font-semibold">शिवानी सुरवसे पाटील</span>
               </div>
               
               {/* Mobile Statistics - Compact */}
@@ -265,7 +339,8 @@ const Header = () => {
       {/* Subscribe Popup */}
       <SubscribePopup 
         isOpen={isSubscribeOpen} 
-        onClose={() => setIsSubscribeOpen(false)} 
+        onClose={() => setIsSubscribeOpen(false)}
+        allowClose={isSubscribed()} // Only allow close if already subscribed
       />
     </>
   );

@@ -39,7 +39,14 @@ const ShareButtons = ({ title, description, image, url }) => {
 
   // Get current page URL if not provided, and ensure it's frontend URL
   const inputUrl = url || window.location.href;
-  const shareUrl = getFrontendUrl(inputUrl);
+  let shareUrl = getFrontendUrl(inputUrl);
+  
+  // Add shared=true parameter for epaper links to allow reading without subscription
+  if (shareUrl.includes('/epaper/')) {
+    const urlObj = new URL(shareUrl);
+    urlObj.searchParams.set('shared', 'true');
+    shareUrl = urlObj.toString();
+  }
   const shareTitle = title || document.title;
   const shareDescription = description || '';
   const shareImage = image || '';
