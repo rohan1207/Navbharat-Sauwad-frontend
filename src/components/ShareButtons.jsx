@@ -44,14 +44,16 @@ const ShareButtons = ({ title, description, image, url }) => {
   // for crawlers, so users (and cards) always see navmanchnews.com links.
   let shareUrl = getFrontendUrl(inputUrl);
   
-  // Add shared=true parameter for epaper links to allow reading without subscription.
-  // NOTE: This works even when using backend preview domain above because the
-  // backend social-preview routes ignore this param for crawlers and the
-  // frontend React/Next pages use it to allow free view.
+  // Add sharing parameters for news and epaper links:
+  // - shared=true : allows free view for epaper routes
+  // - v=2         : simple cache-busting/version so crawlers re-fetch updated OG tags
   try {
-    if (shareUrl.includes('/epaper/')) {
-      const urlObj = new URL(shareUrl);
+    const urlObj = new URL(shareUrl);
+    const path = urlObj.pathname || '';
+
+    if (path.startsWith('/epaper/') || path.startsWith('/news/')) {
       urlObj.searchParams.set('shared', 'true');
+      urlObj.searchParams.set('v', '2');
       shareUrl = urlObj.toString();
     }
   } catch (e) {
