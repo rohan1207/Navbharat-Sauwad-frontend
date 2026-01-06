@@ -24,34 +24,52 @@ app.use((req, res, next) => {
   // Only proxy crawler requests for news and epaper routes
   if (isCrawler(userAgent) && (req.path.startsWith('/news/') || req.path.startsWith('/epaper/'))) {
     const backendPath = req.path + (req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '');
+    // Get the actual frontend origin from the request (works for any domain)
+    const frontendOrigin = req.protocol + '://' + req.get('host');
     const backendFullUrl = `${BACKEND_URL}${backendPath}`;
     
-    console.log(`Proxying crawler request: ${req.path} -> ${backendFullUrl}`);
+    console.log(`[CRAWLER PROXY] Detected crawler: ${userAgent.substring(0, 50)}`);
+    console.log(`[CRAWLER PROXY] Request path: ${req.path}`);
+    console.log(`[CRAWLER PROXY] Frontend origin: ${frontendOrigin}`);
+    console.log(`[CRAWLER PROXY] Proxying to backend: ${backendFullUrl}`);
     
     // Fetch from backend and return HTML
+    // Pass the frontend origin to backend so it can use it for OG tag URLs
     fetch(backendFullUrl, {
       headers: {
         'User-Agent': userAgent,
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'X-Frontend-Origin': frontendOrigin, // Tell backend what the frontend domain is
       }
     })
       .then(response => {
         if (!response.ok) {
+          console.error(`[CRAWLER PROXY] Backend responded with status: ${response.status}`);
           throw new Error(`Backend responded with ${response.status}`);
         }
         return response.text();
       })
       .then(html => {
+        // Log if we got HTML with OG tags
+        const hasOGImage = html.includes('og:image');
+        const hasNewsImage = html.includes('cloudinary.com');
+        console.log(`[CRAWLER PROXY] ✅ Served HTML to crawler. Has OG image: ${hasOGImage}, Has Cloudinary image: ${hasNewsImage}`);
+        if (!hasNewsImage && hasOGImage) {
+          console.warn(`[CRAWLER PROXY] ⚠️  Warning: OG image tag present but might be using logo fallback`);
+        }
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.send(html);
       })
       .catch(error => {
-        console.error('Error proxying to backend:', error);
+        console.error('[CRAWLER PROXY] ❌ Error proxying to backend:', error.message);
         // Fall through to serve React app if backend fails
         next();
       });
   } else {
     // Not a crawler or not a route that needs meta tags - serve React app
+    if (req.path.startsWith('/news/') || req.path.startsWith('/epaper/')) {
+      console.log(`[NORMAL REQUEST] Serving React app for: ${req.path} (User-Agent: ${(req.headers['user-agent'] || '').substring(0, 50)})`);
+    }
     next();
   }
 });

@@ -53,7 +53,8 @@ const ShareButtons = ({ title, description, image, url }) => {
 
     if (path.startsWith('/epaper/') || path.startsWith('/news/')) {
       urlObj.searchParams.set('shared', 'true');
-      urlObj.searchParams.set('v', '2');
+      // Use timestamp-based cache-busting for more aggressive cache invalidation
+      urlObj.searchParams.set('v', Date.now().toString().slice(-6)); // Last 6 digits of timestamp
       shareUrl = urlObj.toString();
     }
   } catch (e) {
