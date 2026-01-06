@@ -424,6 +424,16 @@ const EPaperSection = () => {
     });
   };
 
+  // Format date for footer (1/01/2026 format)
+  const formatDateForFooter = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   // Use current origin for sharing; backend social preview ensures OG tags
   // When custom domain points here, origin will be https://navmanchnews.com
   const frontendBase = typeof window !== 'undefined' ? window.location.origin : 'https://navmanchnews.com';
@@ -549,13 +559,16 @@ const EPaperSection = () => {
       let logoHeight = 0;
       let logoWidth = 0;
       let logoAreaHeight = 0;
+      const lineHeight = 2; // Height of the line below logo (2px)
+      const linePadding = 8; // Padding above and below the line
       
       if (logoImg.complete && logoImg.naturalWidth > 0) {
         // Logo size: 18% of section width or max 150px height (increased from 15% and 120px)
         logoHeight = Math.min(sectionImg.width * 0.18, 150);
         const logoAspectRatio = logoImg.width / logoImg.height;
         logoWidth = logoHeight * logoAspectRatio;
-        logoAreaHeight = logoHeight + 40; // Logo height + padding (20px top + 20px bottom)
+        // Logo height + top padding (20px) + bottom padding (8px) + line (2px) + line bottom padding (8px)
+        logoAreaHeight = logoHeight + 20 + linePadding + lineHeight + linePadding;
       } else {
         // If logo fails to load, use watermark approach
         logoAreaHeight = 0;
@@ -567,14 +580,13 @@ const EPaperSection = () => {
       const footerFontSize = Math.max(12, Math.min(sectionImg.width * 0.02, 16)); // Responsive font size
       
       // Prepare footer text
-      const websiteUrl = 'navmanchnews.com/epapers';
-      const dateText = `तारीख: ${formatDate(epaper?.date || '')}`;
-      const epaperText = `ई-पेपर: ${getCleanEpaperTitle()}`;
-      const pageText = `पृष्ठ: ${page?.pageNo || ''}`;
+      const websiteUrl = 'navmanchnews.com/epaper';
+      const dateText = formatDateForFooter(epaper?.date || '');
+      const pageText = `पृष्ठ ${page?.pageNo || ''}`;
       
       // Calculate footer height
-      // Website URL (1 line) + spacing + metadata (3 lines) + padding
-      const footerHeight = footerLineHeight + 8 + (footerLineHeight * 3) + (footerPadding * 2);
+      // Website URL (1 line) + spacing + date and page (1 line) + padding
+      const footerHeight = footerLineHeight + 8 + footerLineHeight + (footerPadding * 2);
 
       // Set canvas size: section width, extended height (section + logo area + footer)
       canvas.width = sectionImg.width;
@@ -601,29 +613,26 @@ const EPaperSection = () => {
       ctx.font = `${footerFontSize}px 'Mukta', 'Noto Sans Devanagari', Arial, sans-serif`;
       ctx.fillText(websiteUrl, canvas.width / 2, footerY + footerPadding);
       
-      // Draw metadata lines
+      // Draw date and page number side by side
       const metadataY = footerY + footerPadding + footerLineHeight + 8;
-      ctx.fillStyle = '#333333'; // Darker for metadata labels
-      ctx.font = `bold ${footerFontSize}px 'Mukta', 'Noto Sans Devanagari', 'Tiro Devanagari Hindi', 'Hind', Arial, sans-serif`;
+      ctx.fillStyle = '#333333'; // Darker for metadata
+      ctx.font = `${footerFontSize}px 'Mukta', 'Noto Sans Devanagari', Arial, sans-serif`;
       
-      // Date
-      ctx.fillText(dateText, canvas.width / 2, metadataY);
+      // Calculate text widths for centering
+      const dateWidth = ctx.measureText(dateText).width;
+      const separatorWidth = ctx.measureText(' • ').width;
+      const pageWidth = ctx.measureText(pageText).width;
+      const totalWidth = dateWidth + separatorWidth + pageWidth;
+      const startX = (canvas.width - totalWidth) / 2;
       
-      // E-Paper title (may need to truncate if too long)
-      const maxEpaperWidth = canvas.width * 0.9;
-      let epaperDisplayText = epaperText;
-      let epaperMetrics = ctx.measureText(epaperDisplayText);
-      if (epaperMetrics.width > maxEpaperWidth) {
-        // Truncate if too long
-        while (ctx.measureText(epaperDisplayText + '...').width > maxEpaperWidth && epaperDisplayText.length > 0) {
-          epaperDisplayText = epaperDisplayText.slice(0, -1);
-        }
-        epaperDisplayText += '...';
-      }
-      ctx.fillText(epaperDisplayText, canvas.width / 2, metadataY + footerLineHeight);
+      // Draw date
+      ctx.fillText(dateText, startX, metadataY);
       
-      // Page number
-      ctx.fillText(pageText, canvas.width / 2, metadataY + (footerLineHeight * 2));
+      // Draw separator
+      ctx.fillText(' • ', startX + dateWidth, metadataY);
+      
+      // Draw page number
+      ctx.fillText(pageText, startX + dateWidth + separatorWidth, metadataY);
 
       // Draw logo above the clip (centered)
       if (logoImg.complete && logoImg.naturalWidth > 0 && logoAreaHeight > 0) {
@@ -638,6 +647,11 @@ const EPaperSection = () => {
           logoWidth,
           logoHeight
         );
+        
+        // Draw minimal bold black line below logo
+        const lineY = logoY + logoHeight + linePadding;
+        ctx.fillStyle = '#000000'; // Black
+        ctx.fillRect(0, lineY, canvas.width, lineHeight);
       } else if (logoImg.complete && logoImg.naturalWidth > 0) {
         // Fallback: Watermark approach - spread logo with low opacity
         const watermarkSize = Math.min(sectionImg.width * 0.3, 200);
@@ -769,12 +783,16 @@ const EPaperSection = () => {
               {croppedImageUrl ? (
                 <div className="flex flex-col items-center w-full">
                   {/* Logo - Positioned directly above image with minimal gap, matches image width */}
-                  <div className="flex items-center justify-center pt-2 pb-0" style={{ width: `${displayWidth}px`, maxWidth: '100%' }}>
-                    <img
-                      src="/logo1.png"
-                      alt="नव मंच"
-                      className="h-24 md:h-28 w-auto"
-                    />
+                  <div className="flex flex-col items-center w-full" style={{ width: `${displayWidth}px`, maxWidth: '100%' }}>
+                    <div className="flex items-center justify-center pt-2 pb-0">
+                      <img
+                        src="/logo1.png"
+                        alt="नव मंच"
+                        className="h-24 md:h-28 w-auto"
+                      />
+                    </div>
+                    {/* Minimal bold black line below logo */}
+                    <div className="w-full h-0.5 bg-black my-2" style={{ maxWidth: `${displayWidth}px` }}></div>
                   </div>
                   
                   {/* Cropped Image */}
@@ -819,28 +837,22 @@ const EPaperSection = () => {
               {/* Footer Section - Metadata */}
               <div className="bg-gradient-to-b from-subtleGray/10 to-cleanWhite pt-4 pb-4">
                 {/* Website URL */}
-                <div className="text-center mb-4">
-                  <p className="text-xs md:text-sm text-metaGray font-medium tracking-wide">
-                    navmanchnews.com/epapers
-                  </p>
+                <div className="text-center mb-3">
+                  <a 
+                    href="https://navmanchnews.com/epaper" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs md:text-sm text-metaGray hover:text-newsRed font-medium tracking-wide transition-colors"
+                  >
+                    navmanchnews.com/epaper
+                  </a>
                 </div>
                 
-                {/* Metadata */}
-                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 px-4 text-xs md:text-sm text-metaGray">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-deepCharcoal">तारीख:</span>
-                    <span>{formatDate(epaper.date)}</span>
-                  </div>
-                  <div className="hidden md:block w-px h-4 bg-subtleGray"></div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-deepCharcoal">ई-पेपर:</span>
-                    <span className="max-w-[200px] truncate">{getCleanEpaperTitle()}</span>
-                  </div>
-                  <div className="hidden md:block w-px h-4 bg-subtleGray"></div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-deepCharcoal">पृष्ठ:</span>
-                    <span>{page.pageNo}</span>
-                  </div>
+                {/* Date and Page Number - Side by side */}
+                <div className="flex items-center justify-center gap-4 px-4 text-xs md:text-sm text-metaGray">
+                  <span>{formatDateForFooter(epaper.date)}</span>
+                  <span className="font-semibold text-deepCharcoal">•</span>
+                  <span>पृष्ठ {page.pageNo}</span>
                 </div>
               </div>
             </div>
@@ -849,12 +861,14 @@ const EPaperSection = () => {
           {/* Mobile: Full screen scrollable view with fixed header and footer */}
           <div className="md:hidden fixed inset-0 bg-cleanWhite flex flex-col" style={{ top: '48px', bottom: 0, height: 'calc(100vh - 48px)' }}>
             {/* Logo - Fixed at top, minimal padding */}
-            <div className="flex-shrink-0 bg-cleanWhite border-b border-subtleGray/30 py-2 px-0 flex items-center justify-center">
+            <div className="flex-shrink-0 bg-cleanWhite border-b border-subtleGray/30 py-2 px-0 flex flex-col items-center">
               <img
                 src="/logo1.png"
                 alt="नव मंच"
                 className="h-20 w-auto"
               />
+              {/* Minimal bold black line below logo */}
+              <div className="w-full h-0.5 bg-black mt-2"></div>
             </div>
             
             {/* Scrollable Image Container - Full width, scrollable, shows top initially */}
@@ -892,25 +906,21 @@ const EPaperSection = () => {
               <div className="bg-gradient-to-b from-subtleGray/10 to-cleanWhite pt-2.5 pb-3 px-4">
                 {/* Website URL */}
                 <div className="text-center mb-2">
-                  <p className="text-xs text-metaGray font-medium tracking-wide">
-                    navmanchnews.com/epapers
-                  </p>
+                  <a 
+                    href="https://navmanchnews.com/epaper" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs text-metaGray hover:text-newsRed font-medium tracking-wide transition-colors"
+                  >
+                    navmanchnews.com/epaper
+                  </a>
                 </div>
                 
-                {/* Metadata */}
-                <div className="flex flex-col items-center gap-1.5 text-xs text-metaGray">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-deepCharcoal">तारीख:</span>
-                    <span>{formatDate(epaper.date)}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-deepCharcoal">ई-पेपर:</span>
-                    <span className="text-center">{getCleanEpaperTitle()}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-deepCharcoal">पृष्ठ:</span>
-                    <span>{page.pageNo}</span>
-                  </div>
+                {/* Date and Page Number - Side by side */}
+                <div className="flex items-center justify-center gap-3 text-xs text-metaGray">
+                  <span>{formatDateForFooter(epaper.date)}</span>
+                  <span className="font-semibold text-deepCharcoal">•</span>
+                  <span>पृष्ठ {page.pageNo}</span>
                 </div>
               </div>
             </div>
