@@ -48,16 +48,37 @@ export const getStats = () => {
 };
 
 // Check if this is a new session (visit)
+// Uses sessionStorage + timestamp to detect actual new sessions
+// Prevents counting reloads as new visits
 const isNewSession = () => {
   if (typeof window === 'undefined') return false;
   
   try {
     const sessionId = sessionStorage.getItem(SESSION_KEY);
-    if (!sessionId) {
-      // New session - create session ID
+    const sessionTimestamp = sessionStorage.getItem(`${SESSION_KEY}_time`);
+    const now = Date.now();
+    
+    // Session timeout: 30 minutes of inactivity = new session
+    const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+    
+    if (!sessionId || !sessionTimestamp) {
+      // New session - create session ID and timestamp
       sessionStorage.setItem(SESSION_KEY, Date.now().toString());
+      sessionStorage.setItem(`${SESSION_KEY}_time`, now.toString());
       return true;
     }
+    
+    // Check if session expired (30 minutes of inactivity)
+    const lastActivity = parseInt(sessionTimestamp);
+    if (now - lastActivity > SESSION_TIMEOUT) {
+      // Session expired - treat as new session
+      sessionStorage.setItem(SESSION_KEY, Date.now().toString());
+      sessionStorage.setItem(`${SESSION_KEY}_time`, now.toString());
+      return true;
+    }
+    
+    // Update last activity time (but don't count as new visit)
+    sessionStorage.setItem(`${SESSION_KEY}_time`, now.toString());
     return false;
   } catch (error) {
     console.error('Error checking session:', error);
@@ -79,11 +100,29 @@ export const incrementStats = () => {
     const stats = getStats();
     const isNewVisit = isNewSession();
     
-    // Increment hits (every page view)
-    stats.totalHits = (stats.totalHits || 0) + 1;
-    stats.hitsToday = (stats.hitsToday || 0) + 1;
+    // Cooldown period: Don't count hits if page reloaded within 5 seconds
+    // This prevents rapid reloads from inflating hit counts
+    const HIT_COOLDOWN = 5 * 1000; // 5 seconds
+    const lastHitTime = localStorage.getItem(`${STATS_KEY}_lastHit`);
+    const now = Date.now();
     
-    // Increment visits (only for new sessions)
+    let shouldCountHit = true;
+    if (lastHitTime) {
+      const timeSinceLastHit = now - parseInt(lastHitTime);
+      if (timeSinceLastHit < HIT_COOLDOWN) {
+        // Too soon after last hit - probably a reload, don't count
+        shouldCountHit = false;
+      }
+    }
+    
+    // Increment hits (every page view, but with cooldown)
+    if (shouldCountHit) {
+      stats.totalHits = (stats.totalHits || 0) + 1;
+      stats.hitsToday = (stats.hitsToday || 0) + 1;
+      localStorage.setItem(`${STATS_KEY}_lastHit`, now.toString());
+    }
+    
+    // Increment visits (only for new sessions - not reloads)
     if (isNewVisit) {
       stats.totalVisits = (stats.totalVisits || 0) + 1;
       stats.visitsToday = (stats.visitsToday || 0) + 1;
@@ -98,9 +137,46 @@ export const incrementStats = () => {
     // Dispatch event for components to listen
     window.dispatchEvent(new CustomEvent('statsUpdated', { detail: stats }));
     
+    // Optionally send to backend for server-side aggregation
+    // This would give you accurate counts across all users
+    sendStatsToBackend(stats, isNewVisit, shouldCountHit).catch(err => {
+      // Silently fail - don't block user experience
+      console.debug('Failed to send stats to backend:', err);
+    });
+    
     return stats;
   } catch (error) {
     console.error('Error incrementing stats:', error);
+  }
+};
+
+// Send stats to backend for server-side aggregation
+// This gives accurate counts across all users and devices
+const sendStatsToBackend = async (stats, isNewVisit, isNewHit) => {
+  try {
+    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+    
+    // Only send if it's a meaningful event (new visit or new hit)
+    if (!isNewVisit && !isNewHit) return;
+    
+    await fetch(`${API_BASE}/stats/track`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        isNewVisit,
+        isNewHit,
+        timestamp: Date.now(),
+        date: getTodayString()
+      }),
+      // Don't wait for response - fire and forget
+      signal: AbortSignal.timeout(2000)
+    }).catch(() => {
+      // Ignore errors - this is optional tracking
+    });
+  } catch (error) {
+    // Silently fail - don't affect user experience
   }
 };
 

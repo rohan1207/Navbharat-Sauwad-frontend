@@ -14,6 +14,8 @@ const SectionZoomableImage = ({ imageUrl, alt }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const containerRef = useRef(null);
+  const lastTapRef = useRef(0);
+  const tapTimeoutRef = useRef(null);
   
   // Prevent body scroll on mobile
   useEffect(() => {
@@ -40,9 +42,12 @@ const SectionZoomableImage = ({ imageUrl, alt }) => {
     const handleTouchStart = (e) => {
       if (e.touches.length === 2) {
         e.preventDefault();
+        e.stopPropagation();
         initialDistance = getDistance(e.touches[0], e.touches[1]);
         initialScale = scale;
       } else if (e.touches.length === 1 && scale > 1) {
+        e.preventDefault();
+        e.stopPropagation();
         setIsDragging(true);
         setDragStart({
           x: e.touches[0].clientX - position.x,
@@ -54,11 +59,13 @@ const SectionZoomableImage = ({ imageUrl, alt }) => {
     const handleTouchMove = (e) => {
       if (e.touches.length === 2) {
         e.preventDefault();
+        e.stopPropagation();
         const currentDistance = getDistance(e.touches[0], e.touches[1]);
-        const newScale = Math.max(1, Math.min(3, (currentDistance / initialDistance) * initialScale));
+        const newScale = Math.max(1, Math.min(5, (currentDistance / initialDistance) * initialScale));
         setScale(newScale);
       } else if (e.touches.length === 1 && isDragging && scale > 1) {
         e.preventDefault();
+        e.stopPropagation();
         const newX = e.touches[0].clientX - dragStart.x;
         const newY = e.touches[0].clientY - dragStart.y;
         
@@ -72,51 +79,64 @@ const SectionZoomableImage = ({ imageUrl, alt }) => {
       }
     };
 
-    const handleTouchEnd = () => {
-      setIsDragging(false);
-      if (scale < 1) setScale(1);
-      if (scale === 1) {
-        setPosition({ x: 0, y: 0 });
-      }
-    };
 
-    let lastTap = 0;
-    const handleDoubleTap = (e) => {
+    const handleTouchEndWithDoubleTap = (e) => {
+      e.stopPropagation();
+      setIsDragging(false);
+      
+      // Handle double tap
       const currentTime = new Date().getTime();
-      const tapLength = currentTime - lastTap;
+      const tapLength = currentTime - lastTapRef.current;
+      
       if (tapLength < 300 && tapLength > 0) {
+        // Double tap detected
         e.preventDefault();
-        if (scale === 1) {
-          setScale(2);
-        } else {
-          setScale(1);
-          setPosition({ x: 0, y: 0 });
-        }
+        if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+        // Toggle zoom: 1x -> 2x, 2x -> 1x
+        setScale(prevScale => {
+          if (prevScale === 1) {
+            return 2;
+          } else {
+            setPosition({ x: 0, y: 0 });
+            return 1;
+          }
+        });
+        // Reset lastTap to current time minus 400ms so next tap starts fresh
+        // This prevents immediate triple tap but allows new double tap sequence
+        lastTapRef.current = currentTime - 400;
+      } else {
+        // Single tap - wait to see if it's a double tap
+        lastTapRef.current = currentTime;
+        if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+        tapTimeoutRef.current = setTimeout(() => {
+          // Single tap confirmed after delay - do nothing for single tap
+          // Only reset if scale is invalid
+          setScale(prevScale => prevScale < 1 ? 1 : prevScale);
+        }, 300);
       }
-      lastTap = currentTime;
     };
 
     container.addEventListener('touchstart', handleTouchStart, { passive: false });
     container.addEventListener('touchmove', handleTouchMove, { passive: false });
-    container.addEventListener('touchend', handleTouchEnd);
-    container.addEventListener('touchend', handleDoubleTap);
+    container.addEventListener('touchend', handleTouchEndWithDoubleTap, { passive: false });
 
     return () => {
       container.removeEventListener('touchstart', handleTouchStart);
       container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
-      container.removeEventListener('touchend', handleDoubleTap);
+      container.removeEventListener('touchend', handleTouchEndWithDoubleTap);
+      if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
     };
   }, [scale, position, isDragging, dragStart]);
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full overflow-hidden touch-none bg-cleanWhite"
+      className="relative w-full h-full overflow-hidden bg-cleanWhite"
       style={{
-        minHeight: 'calc(100vh - 60px)',
         touchAction: 'none',
-        userSelect: 'none'
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none'
       }}
     >
       <div
@@ -125,21 +145,27 @@ const SectionZoomableImage = ({ imageUrl, alt }) => {
           transformOrigin: 'center center',
           transition: scale === 1 ? 'transform 0.3s ease-out' : 'none',
           width: '100%',
-          minHeight: 'calc(100vh - 60px)',
+          height: '100%',
           display: 'flex',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           justifyContent: 'center',
-          padding: '2px'
+          padding: '4px'
         }}
       >
         <img
           src={imageUrl}
           alt={alt}
-          className="w-full h-auto object-contain"
           style={{
+            width: '100%',
+            height: 'auto',
             maxWidth: '100%',
+            maxHeight: '100%',
+            objectFit: 'contain',
             pointerEvents: 'none',
-            imageRendering: 'crisp-edges'
+            imageRendering: 'crisp-edges',
+            WebkitUserDrag: 'none',
+            userDrag: 'none',
+            display: 'block'
           }}
           onError={(e) => {
             console.error('Error loading section image:', imageUrl);
@@ -149,7 +175,7 @@ const SectionZoomableImage = ({ imageUrl, alt }) => {
       
       {/* Zoom indicator */}
       {scale > 1 && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-xs z-10">
+        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-xs z-10">
           {Math.round(scale * 100)}%
         </div>
       )}
@@ -205,12 +231,22 @@ const EPaperSection = () => {
 
   // Prevent body scroll on mobile when viewing section
   useEffect(() => {
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
+    const isMobileCheck = window.innerWidth < 768;
+    if (isMobileCheck) {
       document.body.style.overflow = 'hidden';
+      // Prevent whole page zoom
+      const viewport = document.querySelector('meta[name="viewport"]');
+      if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+      }
     }
     return () => {
       document.body.style.overflow = '';
+      // Restore viewport
+      const viewport = document.querySelector('meta[name="viewport"]');
+      if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0');
+      }
     };
   }, []);
 
@@ -756,10 +792,10 @@ const EPaperSection = () => {
               <div className="flex items-center justify-center py-4">
                 <button
                   onClick={() => downloadSectionWithLogo(croppedImageUrl || page.image, getCleanSectionTitle())}
-                  className="flex items-center gap-2 px-6 py-3 bg-newsRed text-white rounded-lg font-semibold hover:bg-newsRed/90 transition-colors shadow-md hover:shadow-lg"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-newsRed text-white rounded-full font-semibold hover:bg-newsRed/90 transition-colors shadow-md hover:shadow-lg"
                 >
                   <FaDownload className="w-4 h-4" />
-                  <span>क्लिप डाउनलोड करा</span>
+                  <span className="text-sm">क्लिप डाउनलोड करा</span>
                 </button>
               </div>
               
@@ -793,49 +829,60 @@ const EPaperSection = () => {
             </div>
           </div>
 
-          {/* Mobile: Full screen zoomable view */}
-          <div className="md:hidden pt-12">
-            {/* Image Container with Logo Above - Adapts to image width */}
-            <div className="w-full bg-cleanWhite flex flex-col items-center">
-              {/* Logo - Positioned at top with minimal padding */}
-              <div className="flex items-center justify-center pt-1 pb-0 w-full px-2">
-                <img
-                  src="/logo1.png"
-                  alt="नव मंच"
-                  className="h-20 w-auto"
-                />
-              </div>
-              
-              {/* Section Image - Starts immediately after logo, no gap */}
-              <div className="w-full bg-cleanWhite flex items-center justify-center">
+          {/* Mobile: Full screen zoomable view with fixed header and footer */}
+          <div className="md:hidden fixed inset-0 bg-cleanWhite flex flex-col" style={{ top: '48px', bottom: 0, touchAction: 'none', height: 'calc(100vh - 48px)' }}>
+            {/* Logo - Fixed at top, minimal padding */}
+            <div className="flex-shrink-0 bg-cleanWhite border-b border-subtleGray/30 py-2 px-3 flex items-center justify-center">
+              <img
+                src="/logo1.png"
+                alt="नव मंच"
+                className="h-20 w-auto"
+              />
+            </div>
+            
+            {/* Zoomable Image Container - Takes ALL remaining space, no white space */}
+            {croppedImageUrl && (
+              <div 
+                className="flex-1 overflow-hidden bg-cleanWhite relative" 
+                style={{ 
+                  minHeight: 0,
+                  maxHeight: '100%',
+                  touchAction: 'none',
+                  flex: '1 1 auto'
+                }}
+              >
                 <SectionZoomableImage 
                   imageUrl={croppedImageUrl || page.image}
                   alt={getCleanSectionTitle()}
                 />
               </div>
-            </div>
+            )}
             
-            {/* Mobile Download Button and Footer - Inside clip container */}
-            <div className="w-full bg-cleanWhite px-4 py-4 pb-6">
-              <button
-                onClick={() => downloadSectionWithLogo(croppedImageUrl || page.image, getCleanSectionTitle())}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-newsRed text-white rounded-lg font-semibold hover:bg-newsRed/90 transition-colors shadow-lg mb-4"
-              >
-                <FaDownload className="w-5 h-5" />
-                <span>क्लिप डाउनलोड करा</span>
-              </button>
+            {/* Footer Section - Fixed at bottom, minimal padding */}
+            <div className="flex-shrink-0 bg-cleanWhite border-t border-subtleGray/30">
+              {/* Download Button */}
+              <div className="flex items-center justify-center py-2.5 px-4">
+                <button
+                  onClick={() => downloadSectionWithLogo(croppedImageUrl || page.image, getCleanSectionTitle())}
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 bg-newsRed text-white rounded-full font-semibold hover:bg-newsRed/90 transition-colors shadow-lg"
+                  style={{ touchAction: 'auto' }}
+                >
+                  <FaDownload className="w-4 h-4" />
+                  <span className="text-sm">क्लिप डाउनलोड करा</span>
+                </button>
+              </div>
               
-              {/* Footer Section - Metadata */}
-              <div className="bg-gradient-to-b from-subtleGray/10 to-cleanWhite pt-4 pb-4">
+              {/* Footer Metadata - Compact */}
+              <div className="bg-gradient-to-b from-subtleGray/10 to-cleanWhite pt-2.5 pb-3 px-4">
                 {/* Website URL */}
-                <div className="text-center mb-3">
+                <div className="text-center mb-2">
                   <p className="text-xs text-metaGray font-medium tracking-wide">
                     navmanchnews.com/epapers
                   </p>
                 </div>
                 
                 {/* Metadata */}
-                <div className="flex flex-col items-center gap-2 px-2 text-xs text-metaGray">
+                <div className="flex flex-col items-center gap-1.5 text-xs text-metaGray">
                   <div className="flex items-center gap-1.5">
                     <span className="font-semibold text-deepCharcoal">तारीख:</span>
                     <span>{formatDate(epaper.date)}</span>
