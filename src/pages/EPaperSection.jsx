@@ -418,9 +418,9 @@ const EPaperSection = () => {
     });
   };
 
-  // Use frontend URL for sharing (cleaner, better branding)
-  // Use IDs instead of slugs for cleaner URLs (avoid "Untitled" and encoded characters)
-  const frontendBase = 'https://navmanchnews.com';
+  // Use current origin for sharing; backend social preview ensures OG tags
+  // When custom domain points here, origin will be https://navmanchnews.com
+  const frontendBase = typeof window !== 'undefined' ? window.location.origin : 'https://navmanchnews.com';
   
   // Build clean URL with IDs
   let epaperIdentifier;

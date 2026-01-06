@@ -346,9 +346,9 @@ const NewsDetail = () => {
   };
   
   const articleImage = getAbsoluteImageUrl(news?.featuredImage || news?.image || '');
-  // Use frontend URL for sharing (cleaner, better branding)
-  // Always use ID for news articles to avoid encoded characters (cleaner, more trustworthy URLs)
-  const frontendBase = 'https://navmanchnews.com';
+  // Use current origin for sharing; backend social preview ensures OG tags
+  // When custom domain points here, origin will be https://navmanchnews.com
+  const frontendBase = typeof window !== 'undefined' ? window.location.origin : 'https://navmanchnews.com';
   const articleUrl = news 
     ? (() => {
         let identifier;

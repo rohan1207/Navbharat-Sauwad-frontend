@@ -4,7 +4,7 @@ import { FaWhatsapp, FaTwitter, FaFacebook, FaShareAlt } from 'react-icons/fa';
 const ShareButtons = ({ title, description, image, url }) => {
 
   // Use frontend URL for sharing (cleaner, better branding)
-  const frontendBase = 'https://navmanchnews.com';
+  const frontendBase = typeof window !== 'undefined' ? window.location.origin : 'https://navmanchnews.com';
   
   // Helper function to ensure frontend URL
   const getFrontendUrl = (inputUrl) => {
