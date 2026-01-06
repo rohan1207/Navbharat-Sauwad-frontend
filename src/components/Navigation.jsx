@@ -35,7 +35,7 @@ const Navigation = () => {
   // Additional pages for hamburger menu
   const otherPages = [
     { name: 'ई पेपर', path: '/epaper' },
-    { name: 'ई पेपर 2 (सरलीकृत)', path: '/epaper2' },
+    { name: 'ई पेपर 2 (सरलीकृत)', path: '/epaper' },
     { name: 'आमचे कार्यक्रम', path: '/events' },
     { name: 'गॅलरी', path: '/gallery' },
     { name: 'लेख', path: '/articles' },

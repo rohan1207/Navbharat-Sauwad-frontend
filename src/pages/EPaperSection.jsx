@@ -264,7 +264,7 @@ const EPaperSection = () => {
         if (!epapers || epapers.length === 0) {
           console.log('No epapers found');
           setLoading(false);
-          setTimeout(() => navigate('/epaper2'), 500);
+          setTimeout(() => navigate('/epaper'), 500);
           return;
         }
         
@@ -290,7 +290,7 @@ const EPaperSection = () => {
           console.log('❌ Epaper not found for id:', id);
           console.log('Available epaper IDs:', epapers.map(ep => ({ id: ep.id, _id: ep._id, title: ep.title })));
           setLoading(false);
-          setTimeout(() => navigate('/epaper2'), 500);
+          setTimeout(() => navigate('/epaper'), 500);
           return;
         }
         console.log('✅ Found epaper:', found.title);
@@ -370,14 +370,14 @@ const EPaperSection = () => {
       } catch (error) {
         console.error('Error loading section:', error);
         setLoading(false);
-        setTimeout(() => navigate('/epaper2'), 500);
+        setTimeout(() => navigate('/epaper'), 500);
       }
     };
     
     if (id && pageNo && sectionId) {
       loadData();
     } else {
-      navigate('/epaper2');
+      navigate('/epaper');
     }
   }, [id, pageNo, sectionId, navigate]);
 

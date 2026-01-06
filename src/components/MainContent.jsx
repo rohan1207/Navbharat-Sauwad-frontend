@@ -5,7 +5,7 @@ import { useHeader } from '../context/HeaderContext';
 const MainContent = ({ children }) => {
   const { isHeaderVisible, headerHeight, breakingNewsHeight } = useHeader();
   const location = useLocation();
-  const isEpaperRoute = location.pathname.startsWith('/epaper/') && location.pathname !== '/epaper' && location.pathname !== '/epaper2';
+  const isEpaperRoute = location.pathname.startsWith('/epaper/') && location.pathname !== '/epaper' && location.pathname !== '/epaper';
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
   
   // Navigation height is responsive: min-h-[56px] on mobile, min-h-[60px] on sm+

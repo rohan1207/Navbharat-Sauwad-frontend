@@ -55,7 +55,7 @@ const EPaperViewer = () => {
         if (!epapers || epapers.length === 0) {
           console.log('No epapers found');
           setLoading(false);
-          setTimeout(() => navigate('/epaper2'), 500);
+          setTimeout(() => navigate('/epaper'), 500);
           return;
         }
         
@@ -91,19 +91,19 @@ const EPaperViewer = () => {
           console.log('❌ Epaper not found for id:', id);
           console.log('Available epaper IDs:', epapers.map(ep => ({ id: ep.id, _id: ep._id, title: ep.title })));
           setLoading(false);
-          setTimeout(() => navigate('/epaper2'), 500);
+          setTimeout(() => navigate('/epaper'), 500);
         }
       } catch (error) {
         console.error('Error loading e-paper:', error);
         setLoading(false);
-        setTimeout(() => navigate('/epaper2'), 500);
+        setTimeout(() => navigate('/epaper'), 500);
       }
     };
     
     if (id) {
       loadEpaper();
     } else {
-      navigate('/epaper2');
+      navigate('/epaper');
     }
   }, [id, navigate]);
 
@@ -211,7 +211,7 @@ const EPaperViewer = () => {
                   url={shareUrl}
                 />
                 <Link
-                  to="/epaper2"
+                  to="/epaper"
                   className="text-xs sm:text-sm text-metaGray hover:text-deepCharcoal transition-colors font-semibold whitespace-nowrap"
                 >
                   मागे जा
@@ -226,7 +226,7 @@ const EPaperViewer = () => {
           <div className="container mx-auto px-3">
             <div className="flex items-center justify-between">
               <Link
-                to="/epaper2"
+                to="/epaper"
                 className="flex items-center gap-2 text-deepCharcoal hover:text-newsRed transition-colors font-semibold text-sm"
               >
                 <FaArrowLeft className="w-4 h-4" />

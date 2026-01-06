@@ -37,7 +37,7 @@ const EPaper2 = () => {
   // SEO data for epaper listing page
   const seoTitle = 'नव मंच ई-पेपर | Nav Manch E-Paper - मराठी वृत्तपत्र';
   const seoDescription = 'नव मंच ई-पेपर वाचा. साप्ताहिक मराठी वृत्तपत्राचे डिजिटल आवृत्ती. दर आठवड्याला नवीन ई-पेपर उपलब्ध. Read Nav Manch weekly e-paper, Marathi newspaper digital edition.';
-  const seoUrl = 'https://navmanchnews.com/epaper2';
+  const seoUrl = 'https://navmanchnews.com/epaper';
   const seoImage = 'https://navmanchnews.com/logo1.png';
 
   // Structured data for Newspaper/Periodical (Weekly)

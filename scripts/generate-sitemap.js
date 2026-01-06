@@ -48,7 +48,7 @@ async function generateSitemap() {
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://navmanchnews.com/epaper2</loc>
+    <loc>https://navmanchnews.com/epaper</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>

@@ -225,7 +225,7 @@ const Header = () => {
 
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <Link
-                to="/epaper2"
+                to="/epaper"
                 className="px-2.5 py-1.5 rounded-full bg-editorialBlue text-cleanWhite text-[10px] sm:text-xs font-semibold tracking-wide hover:bg-editorialBlue/90 transition-all duration-300 shadow-sm hover:shadow-md whitespace-nowrap"
               >
                 ई-पेपर
@@ -269,7 +269,7 @@ const Header = () => {
             {/* Right: E-Paper and Subscribe */}
             <div className="flex items-center space-x-3">
               <Link
-                to="/epaper2"
+                to="/epaper"
                 className="bg-editorialBlue text-cleanWhite px-5 py-2 text-sm font-semibold uppercase tracking-wider hover:bg-editorialBlue/80 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 rounded-full"
               >
                 ई-पेपर
