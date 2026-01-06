@@ -41,11 +41,13 @@ const SectionZoomableImage = ({ imageUrl, alt }) => {
 
     const handleTouchStart = (e) => {
       if (e.touches.length === 2) {
+        // Pinch zoom - prevent default to allow zoom
         e.preventDefault();
         e.stopPropagation();
         initialDistance = getDistance(e.touches[0], e.touches[1]);
         initialScale = scale;
       } else if (e.touches.length === 1 && scale > 1) {
+        // Pan when zoomed - prevent default to allow pan
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(true);
@@ -54,16 +56,19 @@ const SectionZoomableImage = ({ imageUrl, alt }) => {
           y: e.touches[0].clientY - position.y
         });
       }
+      // If scale is 1, allow normal scrolling (don't prevent default)
     };
 
     const handleTouchMove = (e) => {
       if (e.touches.length === 2) {
+        // Pinch zoom - prevent default
         e.preventDefault();
         e.stopPropagation();
         const currentDistance = getDistance(e.touches[0], e.touches[1]);
         const newScale = Math.max(1, Math.min(5, (currentDistance / initialDistance) * initialScale));
         setScale(newScale);
       } else if (e.touches.length === 1 && isDragging && scale > 1) {
+        // Pan when zoomed - prevent default
         e.preventDefault();
         e.stopPropagation();
         const newX = e.touches[0].clientX - dragStart.x;
@@ -77,6 +82,7 @@ const SectionZoomableImage = ({ imageUrl, alt }) => {
           y: Math.max(-maxY, Math.min(maxY, newY))
         });
       }
+      // If scale is 1 and not dragging, allow normal scroll (don't prevent default)
     };
 
 
@@ -131,25 +137,26 @@ const SectionZoomableImage = ({ imageUrl, alt }) => {
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full overflow-hidden bg-cleanWhite"
+      className="relative w-full min-h-full bg-cleanWhite"
       style={{
-        touchAction: 'none',
+        touchAction: 'pan-y pinch-zoom',
         userSelect: 'none',
         WebkitUserSelect: 'none',
-        WebkitTouchCallout: 'none'
+        WebkitTouchCallout: 'none',
+        padding: 0
       }}
     >
       <div
         style={{
           transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-          transformOrigin: 'center center',
+          transformOrigin: 'top center',
           transition: scale === 1 ? 'transform 0.3s ease-out' : 'none',
           width: '100%',
-          height: '100%',
+          minHeight: '100%',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-start',
           justifyContent: 'center',
-          padding: '4px'
+          padding: 0
         }}
       >
         <img
@@ -159,13 +166,12 @@ const SectionZoomableImage = ({ imageUrl, alt }) => {
             width: '100%',
             height: 'auto',
             maxWidth: '100%',
-            maxHeight: '100%',
+            display: 'block',
             objectFit: 'contain',
-            pointerEvents: 'none',
+            pointerEvents: scale > 1 ? 'auto' : 'none',
             imageRendering: 'crisp-edges',
             WebkitUserDrag: 'none',
-            userDrag: 'none',
-            display: 'block'
+            userDrag: 'none'
           }}
           onError={(e) => {
             console.error('Error loading section image:', imageUrl);
@@ -829,10 +835,10 @@ const EPaperSection = () => {
             </div>
           </div>
 
-          {/* Mobile: Full screen zoomable view with fixed header and footer */}
-          <div className="md:hidden fixed inset-0 bg-cleanWhite flex flex-col" style={{ top: '48px', bottom: 0, touchAction: 'none', height: 'calc(100vh - 48px)' }}>
+          {/* Mobile: Full screen scrollable view with fixed header and footer */}
+          <div className="md:hidden fixed inset-0 bg-cleanWhite flex flex-col" style={{ top: '48px', bottom: 0, height: 'calc(100vh - 48px)' }}>
             {/* Logo - Fixed at top, minimal padding */}
-            <div className="flex-shrink-0 bg-cleanWhite border-b border-subtleGray/30 py-2 px-3 flex items-center justify-center">
+            <div className="flex-shrink-0 bg-cleanWhite border-b border-subtleGray/30 py-2 px-0 flex items-center justify-center">
               <img
                 src="/logo1.png"
                 alt="नव मंच"
@@ -840,15 +846,14 @@ const EPaperSection = () => {
               />
             </div>
             
-            {/* Zoomable Image Container - Takes ALL remaining space, no white space */}
+            {/* Scrollable Image Container - Full width, scrollable, shows top initially */}
             {croppedImageUrl && (
               <div 
-                className="flex-1 overflow-hidden bg-cleanWhite relative" 
+                className="flex-1 overflow-y-auto overflow-x-hidden bg-cleanWhite relative" 
                 style={{ 
                   minHeight: 0,
-                  maxHeight: '100%',
-                  touchAction: 'none',
-                  flex: '1 1 auto'
+                  touchAction: 'pan-y pinch-zoom',
+                  WebkitOverflowScrolling: 'touch'
                 }}
               >
                 <SectionZoomableImage 
