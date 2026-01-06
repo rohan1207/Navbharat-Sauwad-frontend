@@ -141,7 +141,7 @@ const EPaper2 = () => {
                   <p className="text-metaGray text-lg">कोणतेही ई-पेपर उपलब्ध नाही</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                   {epapers.map((epaper) => {
                     const thumbnail = getFirstPageThumbnail(epaper);
                     // Get the ID - prefer id field, fallback to _id, convert to string
@@ -159,12 +159,12 @@ const EPaper2 = () => {
                         className="group bg-cleanWhite border border-subtleGray rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 block"
                       >
                         {/* Thumbnail */}
-                        <div className="relative aspect-[3/4] overflow-hidden bg-subtleGray/30">
+                        <div className="relative aspect-[3/4] overflow-hidden bg-subtleGray/30 flex items-center justify-center">
                           {thumbnail ? (
                             <img
                               src={thumbnail}
                               alt={epaper.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
