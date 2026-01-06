@@ -110,7 +110,8 @@ const Header = () => {
   useEffect(() => {
     const delay = 500; // Small delay before animation
     const duration = 1000; // 1 second animation duration
-    
+    let timeoutId;
+
     const loadAndAnimateStats = async () => {
       if (isAnimatingRef.current) return; // Don't start new animation while one is running
       
@@ -132,7 +133,7 @@ const Header = () => {
       
       isAnimatingRef.current = true;
       
-      const timeoutId = setTimeout(() => {
+      timeoutId = setTimeout(() => {
         const startTime = Date.now();
 
         const animate = () => {
@@ -161,12 +162,10 @@ const Header = () => {
 
         requestAnimationFrame(animate);
       }, delay);
-      
-      return () => clearTimeout(timeoutId);
     };
     
     // Initial load with animation
-    const cleanup = loadAndAnimateStats();
+    loadAndAnimateStats();
     
     // Listen for stats updates
     const handleStatsUpdate = () => {
@@ -186,7 +185,7 @@ const Header = () => {
     }, 5000);
     
     return () => {
-      if (cleanup) cleanup();
+      if (timeoutId) clearTimeout(timeoutId);
       window.removeEventListener('statsUpdated', handleStatsUpdate);
       window.removeEventListener('statsRefresh', handleStatsRefresh);
       clearInterval(intervalId);

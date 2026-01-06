@@ -384,8 +384,8 @@ const NewsDetail = () => {
           {/* Main Content */}
           <div className="lg:col-span-8 order-1 lg:order-2">
             <article className="bg-cleanWhite rounded-lg border border-subtleGray px-4 sm:px-8 py-6 shadow-sm">
-              {/* Category + breadcrumb style */}
-              <div className="flex items-center justify-between mb-4">
+              {/* Category + breadcrumb style + top share buttons */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <div className="flex items-center space-x-3">
                   {(category || news.categoryId) && (
                     <Link
@@ -397,9 +397,20 @@ const NewsDetail = () => {
                     </Link>
                   )}
                 </div>
-                <span className="hidden sm:inline text-xs text-metaGray">
-                  {new Date(news.publishedAt || news.createdAt || news.date).toLocaleDateString('mr-IN')}
-                </span>
+                <div className="flex items-center justify-between sm:justify-end gap-3">
+                  <span className="text-xs text-metaGray">
+                    {new Date(news.publishedAt || news.createdAt || news.date).toLocaleDateString('mr-IN')}
+                  </span>
+                  {/* Top share buttons (desktop / tablet) */}
+                  <div className="hidden md:block">
+                    <ShareButtons
+                      title={news.title}
+                      description={articleDescription}
+                      image={articleImage}
+                      url={articleUrl}
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Article Image */}
@@ -434,6 +445,25 @@ const NewsDetail = () => {
                   className="text-base text-slateBody leading-relaxed article-content"
                   dangerouslySetInnerHTML={{ __html: news.content || '' }}
                 />
+              </div>
+
+              {/* Share and Back Buttons - above related news */}
+              <div className="mt-8 pt-6 border-t border-subtleGray flex flex-col sm:flex-row justify-between items-center gap-4">
+                <button
+                  onClick={() => navigate(-1)}
+                  className="bg-gradient-to-r from-newsRed to-editorialBlue text-cleanWhite px-6 py-2 rounded font-semibold hover:opacity-90 transition-opacity"
+                >
+                  परत जा
+                </button>
+                {/* Mobile + extra share buttons */}
+                <div className="md:hidden">
+                  <ShareButtons
+                    title={news.title}
+                    description={articleDescription}
+                    image={articleImage}
+                    url={articleUrl}
+                  />
+                </div>
               </div>
 
               {/* People Also Read Section */}
@@ -513,22 +543,6 @@ const NewsDetail = () => {
                   </div>
                 </div>
               )}
-
-              {/* Share and Back Buttons */}
-              <div className="mt-8 pt-6 border-t border-subtleGray flex flex-col sm:flex-row justify-between items-center gap-4">
-                <button
-                  onClick={() => navigate(-1)}
-                  className="bg-gradient-to-r from-newsRed to-editorialBlue text-cleanWhite px-6 py-2 rounded font-semibold hover:opacity-90 transition-opacity"
-                >
-                  परत जा
-                </button>
-                <ShareButtons
-                  title={news.title}
-                  description={articleDescription}
-                  image={articleImage}
-                  url={articleUrl}
-                />
-              </div>
             </article>
           </div>
 
