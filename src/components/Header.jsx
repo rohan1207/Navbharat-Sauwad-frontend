@@ -3,8 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import SubscribePopup from './SubscribePopup';
 import { useHeader } from '../context/HeaderContext';
 import { FaEye, FaChartLine } from 'react-icons/fa';
-import { isSubscribed, getSubscriberInitial, getSubscription } from '../utils/subscription';
-import { getStats, initStats } from '../utils/stats';
+import { isSubscribedSync, isSubscribed, getSubscriberInitial, getSubscription } from '../utils/subscription';
+import { getStats, getStatsSync, initStats } from '../utils/stats';
 
 const Header = () => {
   const [isSubscribeOpen, setIsSubscribeOpen] = useState(false);
@@ -13,9 +13,23 @@ const Header = () => {
   const location = useLocation();
   // Initialize stats on component mount
   const [stats, setStats] = useState(() => {
-    // Initialize stats from localStorage (before incrementing)
-    const storedStats = getStats();
-    return storedStats;
+    // Initialize stats from localStorage cache (synchronous for initial render)
+    // We'll fetch from API in useEffect
+    try {
+      const stored = localStorage.getItem('navmanch_stats');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (e) {
+      // Ignore
+    }
+    return {
+      totalVisits: 120,
+      visitsToday: 85,
+      totalHits: 250,
+      hitsToday: 180,
+      lastVisitDate: new Date().toISOString().split('T')[0]
+    };
   });
 
   const previousStatsRef = useRef(stats);
@@ -60,14 +74,14 @@ const Header = () => {
                          location.pathname.includes('/epaper/');
     
     // Don't show popup if already subscribed or if it's a shared link
-    if (isSubscribed() || isSharedLink) return;
+    if (isSubscribedSync() || isSharedLink) return;
     
     let scrollCount = 0;
     let lastScrollTop = 0;
     
     const handleScroll = () => {
       // Check again if subscribed (in case user subscribed while scrolling)
-      if (isSubscribed()) {
+      if (isSubscribedSync()) {
         window.removeEventListener('scroll', handleScroll);
         return;
       }
@@ -79,7 +93,7 @@ const Header = () => {
         scrollCount++;
         lastScrollTop = scrollTop;
         
-        if (scrollCount >= 2 && !isSubscribed() && !isSubscribeOpen) {
+        if (scrollCount >= 2 && !isSubscribedSync() && !isSubscribeOpen) {
           setIsSubscribeOpen(true);
           window.removeEventListener('scroll', handleScroll);
         }
@@ -97,10 +111,11 @@ const Header = () => {
     const delay = 500; // Small delay before animation
     const duration = 1000; // 1 second animation duration
     
-    const loadAndAnimateStats = () => {
+    const loadAndAnimateStats = async () => {
       if (isAnimatingRef.current) return; // Don't start new animation while one is running
       
-      const targetValues = getStats();
+      // Fetch from backend API (global stats)
+      const targetValues = await getStats();
       const startValues = { ...previousStatsRef.current };
       
       // Only animate if values changed
@@ -158,16 +173,22 @@ const Header = () => {
       loadAndAnimateStats();
     };
     
-    window.addEventListener('statsUpdated', handleStatsUpdate);
+    const handleStatsRefresh = () => {
+      loadAndAnimateStats();
+    };
     
-    // Also check for updates periodically (every 2 seconds)
+    window.addEventListener('statsUpdated', handleStatsUpdate);
+    window.addEventListener('statsRefresh', handleStatsRefresh);
+    
+    // Also check for updates periodically (every 5 seconds to get global stats)
     const intervalId = setInterval(() => {
       loadAndAnimateStats();
-    }, 2000);
+    }, 5000);
     
     return () => {
       if (cleanup) cleanup();
       window.removeEventListener('statsUpdated', handleStatsUpdate);
+      window.removeEventListener('statsRefresh', handleStatsRefresh);
       clearInterval(intervalId);
     };
   }, []);

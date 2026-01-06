@@ -17,30 +17,60 @@ const getDefaultStats = () => ({
   lastVisitDate: getTodayString()
 });
 
-// Get stored stats
-export const getStats = () => {
+// Fetch stats from backend API (global stats across all devices)
+export const getStats = async () => {
+  if (typeof window === 'undefined') return getDefaultStats();
+  
+  try {
+    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+    
+    const response = await fetch(`${API_BASE}/stats`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // Cache for 5 seconds to reduce API calls
+      cache: 'no-cache'
+    });
+    
+    if (response.ok) {
+      const stats = await response.json();
+      // Cache in localStorage as fallback
+      localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+      return stats;
+    } else {
+      // Fallback to localStorage if API fails
+      const stored = localStorage.getItem(STATS_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+      return getDefaultStats();
+    }
+  } catch (error) {
+    console.error('Error fetching stats from API:', error);
+    // Fallback to localStorage if API fails
+    try {
+      const stored = localStorage.getItem(STATS_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (e) {
+      console.error('Error reading stats from localStorage:', e);
+    }
+    return getDefaultStats();
+  }
+};
+
+// Synchronous version for initial render (uses cached value)
+export const getStatsSync = () => {
   if (typeof window === 'undefined') return getDefaultStats();
   
   try {
     const stored = localStorage.getItem(STATS_KEY);
-    if (!stored) {
-      const defaultStats = getDefaultStats();
-      localStorage.setItem(STATS_KEY, JSON.stringify(defaultStats));
-      return defaultStats;
+    if (stored) {
+      return JSON.parse(stored);
     }
-    
-    const stats = JSON.parse(stored);
-    const today = getTodayString();
-    
-    // Reset today's stats if it's a new day
-    if (stats.lastVisitDate !== today) {
-      stats.visitsToday = 0;
-      stats.hitsToday = 0;
-      stats.lastVisitDate = today;
-      localStorage.setItem(STATS_KEY, JSON.stringify(stats));
-    }
-    
-    return stats;
+    return getDefaultStats();
   } catch (error) {
     console.error('Error reading stats:', error);
     return getDefaultStats();
@@ -131,18 +161,18 @@ export const incrementStats = () => {
     // Update last visit date
     stats.lastVisitDate = getTodayString();
     
-    // Save to localStorage
+    // Send to backend FIRST (this is the source of truth)
+    // This gives accurate counts across all users and devices
+    sendStatsToBackend(isNewVisit, shouldCountHit).catch(err => {
+      // Silently fail - don't block user experience
+      console.debug('Failed to send stats to backend:', err);
+    });
+    
+    // Also save to localStorage as cache/fallback
     localStorage.setItem(STATS_KEY, JSON.stringify(stats));
     
     // Dispatch event for components to listen
     window.dispatchEvent(new CustomEvent('statsUpdated', { detail: stats }));
-    
-    // Optionally send to backend for server-side aggregation
-    // This would give you accurate counts across all users
-    sendStatsToBackend(stats, isNewVisit, shouldCountHit).catch(err => {
-      // Silently fail - don't block user experience
-      console.debug('Failed to send stats to backend:', err);
-    });
     
     return stats;
   } catch (error) {
@@ -152,14 +182,14 @@ export const incrementStats = () => {
 
 // Send stats to backend for server-side aggregation
 // This gives accurate counts across all users and devices
-const sendStatsToBackend = async (stats, isNewVisit, isNewHit) => {
+const sendStatsToBackend = async (isNewVisit, isNewHit) => {
   try {
     const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
     
     // Only send if it's a meaningful event (new visit or new hit)
     if (!isNewVisit && !isNewHit) return;
     
-    await fetch(`${API_BASE}/stats/track`, {
+    const response = await fetch(`${API_BASE}/stats/track`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -175,6 +205,14 @@ const sendStatsToBackend = async (stats, isNewVisit, isNewHit) => {
     }).catch(() => {
       // Ignore errors - this is optional tracking
     });
+    
+    // If successful, fetch updated stats
+    if (response && response.ok) {
+      // Trigger stats refresh after a short delay
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('statsRefresh'));
+      }, 500);
+    }
   } catch (error) {
     // Silently fail - don't affect user experience
   }
