@@ -158,8 +158,9 @@ const EPaperViewer = () => {
   };
   
   const shareTitle = epaper ? `${getCleanEpaperTitle()} - नव मंच` : 'नव मंच ई-पेपर';
+  // Description without date duplication - backend OG tags handle the preview card
   const shareDescription = epaper 
-    ? `${getCleanEpaperTitle()} - ${epaper.date ? new Date(epaper.date).toLocaleDateString('mr-IN') : ''}`
+    ? `${getCleanEpaperTitle()} | navmanchnews.com`
     : 'नव मंच ई-पेपर';
   
   // Ensure image URL is absolute for proper preview cards

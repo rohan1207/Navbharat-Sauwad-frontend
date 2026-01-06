@@ -457,8 +457,8 @@ const NewsDetail = () => {
                 >
                   परत जा
                 </button>
-                {/* Mobile + extra share buttons */}
-                <div className="md:hidden">
+                {/* Share buttons on right side - visible on all devices */}
+                <div className="flex items-center">
                   <ShareButtons
                     title={news.title}
                     description={articleDescription}

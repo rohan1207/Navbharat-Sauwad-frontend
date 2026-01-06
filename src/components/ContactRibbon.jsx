@@ -21,7 +21,16 @@ const ContactRibbon = () => {
               href="tel:+919158578008"
               className="flex items-center gap-1.5 text-cleanWhite hover:text-yellow-200 transition-colors duration-200 group"
             >
-              <FaPhone className="text-xs md:text-base group-hover:scale-105 transition-transform duration-200" />
+              <FaPhone 
+                className="text-xs md:text-base transition-transform duration-200" 
+                style={{ transform: 'scaleX(-1)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scaleX(-1) scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scaleX(-1)';
+                }}
+              />
               <span className="text-[11px] md:text-base font-medium whitespace-nowrap">
                 <span className="hidden sm:inline">मो. नं.: </span>
                 <span className="font-semibold">९१५८५७८००८</span>

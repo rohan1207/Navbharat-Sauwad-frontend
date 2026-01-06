@@ -478,12 +478,23 @@ const EPaperSection = () => {
     return title;
   };
   
+  // Clean section title - remove "Untitled"
+  const getShareSectionTitle = () => {
+    if (!section || !section.title) return 'बातमी विभाग';
+    const title = section.title.trim();
+    if (title === '' || title.toLowerCase() === 'untitled') {
+      return 'बातमी विभाग';
+    }
+    return title;
+  };
+  
   const shareTitle = epaper && section 
-    ? `${getCleanSectionTitle()} - ${getCleanEpaperTitle()}`
+    ? `${getShareSectionTitle()} - ${getCleanEpaperTitle()}`
     : 'नव मंच ई-पेपर';
   
+  // Description without date duplication - backend OG tags handle the preview card
   const shareDescription = epaper && section
-    ? `${getCleanEpaperTitle()} - पृष्ठ ${page.pageNo} - ${formatDate(epaper.date)}`
+    ? `${getCleanEpaperTitle()} - पृष्ठ ${page.pageNo}`
     : 'नव मंच ई-पेपर';
   
   // Ensure image URL is absolute for proper preview cards

@@ -75,7 +75,7 @@ const Footer = () => {
                 </span>
               </li>
               <li className="flex items-center gap-3">
-                <FaPhone className="text-newsRed flex-shrink-0" />
+                <FaPhone className="text-newsRed flex-shrink-0" style={{ transform: 'scaleX(-1)' }} />
                 <a 
                   href="tel:+919158578008" 
                   className="text-slateBody hover:text-newsRed transition-colors"
