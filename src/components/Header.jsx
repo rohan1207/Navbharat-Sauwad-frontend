@@ -369,17 +369,30 @@ const Header = () => {
                 <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/60 backdrop-blur-sm rounded border border-subtleGray/40">
                   <FaEye className="text-newsRed text-[10px]" />
                   <span className="text-[9px] text-metaGray">Visit:</span>
-                  <span className="text-[9px] font-bold text-deepCharcoal">{stats.visitsToday.toLocaleString('en-IN')}</span>
+                  <span className="text-[9px] font-bold text-deepCharcoal">{stats.visitsToday?.toLocaleString('en-IN') || 0}</span>
                 </div>
                 <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/60 backdrop-blur-sm rounded border border-subtleGray/40">
                   <FaChartLine className="text-newsRed text-[10px]" />
                   <span className="text-[9px] text-metaGray">Total:</span>
-                  <span className="text-[9px] font-bold text-deepCharcoal">{(stats.totalVisits / 1000).toFixed(0)}K</span>
+                  <span className="text-[9px] font-bold text-deepCharcoal">
+                    {stats.totalVisits && stats.totalVisits >= 1000 
+                      ? `${(stats.totalVisits / 1000).toFixed(0)}K` 
+                      : (stats.totalVisits?.toLocaleString('en-IN') || 0)}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/60 backdrop-blur-sm rounded border border-subtleGray/40">
                   <FaEye className="text-editorialBlue text-[10px]" />
                   <span className="text-[9px] text-metaGray">Hits:</span>
-                  <span className="text-[9px] font-bold text-deepCharcoal">{stats.hitsToday.toLocaleString('en-IN')}</span>
+                  <span className="text-[9px] font-bold text-deepCharcoal">{stats.hitsToday?.toLocaleString('en-IN') || 0}</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/60 backdrop-blur-sm rounded border border-subtleGray/40">
+                  <FaChartLine className="text-editorialBlue text-[10px]" />
+                  <span className="text-[9px] text-metaGray">Total:</span>
+                  <span className="text-[9px] font-bold text-deepCharcoal">
+                    {stats.totalHits && stats.totalHits >= 1000 
+                      ? `${(stats.totalHits / 1000).toFixed(0)}K` 
+                      : (stats.totalHits?.toLocaleString('en-IN') || 0)}
+                  </span>
                 </div>
               </div>
             </div>
