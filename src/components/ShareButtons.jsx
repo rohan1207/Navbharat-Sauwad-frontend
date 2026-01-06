@@ -39,39 +39,10 @@ const ShareButtons = ({ title, description, image, url }) => {
 
   // Get current page URL if not provided, and ensure it's frontend URL
   const inputUrl = url || window.location.href;
+  // Ensure we always share the FRONTEND domain (navmanchnews.com)
+  // Backend/social-preview HTML is used transparently via the proxy in Frontend/server.js
+  // for crawlers, so users (and cards) always see navmanchnews.com links.
   let shareUrl = getFrontendUrl(inputUrl);
-  
-  // IMPORTANT: For share preview cards (especially WhatsApp), crawlers MUST see
-  // proper Open Graph meta tags in the initial HTML. Our normal React frontend
-  // sets meta tags via JavaScript (SEO component), which most crawlers don't execute.
-  //
-  // To guarantee that the image in the share card is ALWAYS the actual news image,
-  // we use the backend social-preview routes for crawlers:
-  //   - https://navmanch-backend.onrender.com/news/:id
-  //   - https://navmanch-backend.onrender.com/epaper/...
-  //
-  // Those routes return fully-rendered HTML with OG tags and the correct image.
-  // Inside those HTML responses, og:url and canonical are set to
-  //   https://navmanchnews.com/...
-  // so the card itself still shows "navmanchnews.com" as the site.
-  //
-  // Here we only change the URL that WhatsApp/Facebook fetch, not what the card displays.
-  try {
-    const backendBase = 'https://navmanch-backend.onrender.com';
-    const backendBaseUrl = new URL(backendBase);
-    const parsed = new URL(shareUrl);
-    const path = parsed.pathname || '';
-
-    // Use backend preview routes for news and epaper links
-    if (path.startsWith('/news/') || path.startsWith('/epaper/')) {
-      parsed.protocol = backendBaseUrl.protocol;
-      parsed.hostname = backendBaseUrl.hostname;
-      parsed.port = backendBaseUrl.port;
-      shareUrl = parsed.toString();
-    }
-  } catch (e) {
-    // If URL parsing fails, keep original shareUrl
-  }
   
   // Add shared=true parameter for epaper links to allow reading without subscription.
   // NOTE: This works even when using backend preview domain above because the

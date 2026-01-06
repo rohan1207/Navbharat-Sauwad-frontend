@@ -401,8 +401,10 @@ const NewsDetail = () => {
                   <span className="text-xs text-metaGray">
                     {new Date(news.publishedAt || news.createdAt || news.date).toLocaleDateString('mr-IN')}
                   </span>
-                  {/* Top share buttons (desktop / tablet) */}
-                  <div className="hidden md:block">
+                  {/* Top share buttons (all devices) 
+                      - On phones ShareButtons component already shows icon-only (labels hidden on small screens)
+                   */}
+                  <div className="flex items-center">
                     <ShareButtons
                       title={news.title}
                       description={articleDescription}
