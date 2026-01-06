@@ -110,7 +110,6 @@ const ShareButtons = ({ title, description, image, url }) => {
         title="WhatsApp वर शेअर करा"
       >
         <FaWhatsapp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        <span className="font-semibold text-xs sm:text-sm hidden sm:inline">WhatsApp</span>
       </button>
 
       {/* Facebook Share */}
@@ -121,7 +120,6 @@ const ShareButtons = ({ title, description, image, url }) => {
         title="Facebook वर शेअर करा"
       >
         <FaFacebook className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        <span className="font-semibold text-xs sm:text-sm hidden sm:inline">Facebook</span>
       </button>
 
       {/* Twitter Share */}
@@ -132,7 +130,6 @@ const ShareButtons = ({ title, description, image, url }) => {
         title="Twitter वर शेअर करा"
       >
         <FaTwitter className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        <span className="font-semibold text-xs sm:text-sm hidden sm:inline">Twitter</span>
       </button>
 
       {/* Copy Link */}
@@ -143,7 +140,6 @@ const ShareButtons = ({ title, description, image, url }) => {
         title="लिंक कॉपी करा"
       >
         <FaShareAlt className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        <span className="font-semibold text-xs sm:text-sm hidden sm:inline">कॉपी</span>
       </button>
     </div>
   );

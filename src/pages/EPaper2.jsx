@@ -62,9 +62,9 @@ const EPaper2 = () => {
     "mainEntity": {
       "@type": "ItemList",
       "numberOfItems": epapers.length,
-      "itemListElement": epapers.slice(0, 10).map((epaper, index) => {
-        const epaperId = epaper.id !== undefined ? String(epaper.id) : (epaper._id ? String(epaper._id) : null);
-        const epaperIdentifier = epaper.slug || epaperId;
+          "itemListElement": epapers.slice(0, 10).map((epaper, index) => {
+            const epaperId = epaper.id !== undefined ? String(epaper.id) : (epaper._id ? String(epaper._id) : null);
+            const epaperIdentifier = epaperId || epaper.slug || epaperId;
         return {
           "@type": "ListItem",
           "position": index + 1,
@@ -150,8 +150,8 @@ const EPaper2 = () => {
                       console.warn('Epaper missing ID:', epaper);
                       return null;
                     }
-                    // Use slug if available, otherwise use ID
-                    const epaperIdentifier = epaper.slug || epaperId;
+                    // Prefer ID for URLs (stable, no encoding issues)
+                    const epaperIdentifier = epaperId || epaper.slug || epaperId;
                     return (
                       <Link
                         key={epaperId}

@@ -167,7 +167,7 @@ const Sidebar = ({ type = 'left' }) => {
                 return (
                   <Link
                     key={newsId || index}
-                    to={`/news/${newsSlug || ''}`}
+                    to={`/news/${newsId || newsSlug || ''}`}
                     className="flex gap-2 sm:gap-3 group hover:bg-subtleGray p-2 rounded transition-colors"
                   >
                     <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 bg-subtleGray rounded overflow-hidden">
@@ -254,7 +254,7 @@ const Sidebar = ({ type = 'left' }) => {
         <div className="space-y-3 sm:space-y-4 relative">
           <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-subtleGray"></div>
           {latestNews.length > 0 ? (
-            latestNews.map((news, index) => {
+              latestNews.map((news, index) => {
               const newsId = news._id || news.id;
               const newsSlug = news.slug || newsId;
               const newsDate = news.publishedAt || news.createdAt || news.date;
@@ -263,7 +263,7 @@ const Sidebar = ({ type = 'left' }) => {
                 <div key={newsId || index} className="relative pl-5 sm:pl-6">
                   <div className="absolute left-0 top-1 w-3 h-3 sm:w-4 sm:h-4 bg-newsRed rounded-full border-2 border-white shadow-sm"></div>
                   <Link
-                    to={`/news/${newsSlug || ''}`}
+                    to={`/news/${newsId || newsSlug || ''}`}
                     className="block group hover:bg-subtleGray/50 p-1.5 sm:p-2 rounded-lg transition-colors"
                   >
                     <p className="text-[10px] sm:text-xs text-metaGray mb-1">

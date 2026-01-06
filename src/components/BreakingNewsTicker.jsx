@@ -55,11 +55,12 @@ const BreakingNewsTicker = () => {
               }
             }
 
+            const articleId = article._id || article.id;
             return {
-              id: article._id || article.id,
+              id: articleId,
               title: article.title,
               category: categoryName,
-              url: `/news/${article.slug || article._id || article.id}`
+              url: `/news/${articleId || article.slug || ''}`
             };
           });
 

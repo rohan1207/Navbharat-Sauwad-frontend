@@ -499,7 +499,7 @@ const NewsDetail = () => {
                       return (
                         <Link
                           key={articleId}
-                          to={`/news/${articleSlug}`}
+                          to={`/news/${articleId || articleSlug}`}
                           className="group bg-cleanWhite rounded-lg overflow-hidden shadow-sm border border-subtleGray/70 hover:shadow-md transition-all duration-300"
                         >
                           <div className="relative overflow-hidden">

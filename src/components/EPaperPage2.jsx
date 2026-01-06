@@ -208,7 +208,7 @@ const EPaperPage2 = ({ page, onSectionClick, epaperId, epaperSlug, isMobile = fa
                     return;
                   }
                   
-                  const epIdentifier = epaperSlug || String(epaperId);
+                  const epIdentifier = String(epaperId || epaperSlug || '');
                   navigate(`/epaper/${epIdentifier}/page/${page.pageNo}/section/${sectionId}`);
                 } else if (onSectionClick) {
                   onSectionClick(newsItem);
@@ -284,11 +284,11 @@ const EPaperPage2 = ({ page, onSectionClick, epaperId, epaperSlug, isMobile = fa
                                    newsItem.slug.trim() !== '' && 
                                    newsItem.slug.toLowerCase() !== 'untitled';
               
-              if (hasValidSlug) {
-                sectionId = newsItem.slug;
-              } else if (newsItem.id !== undefined && newsItem.id !== null) {
-                // Use ID if slug is not valid - IDs are always unique
+              if (newsItem.id !== undefined && newsItem.id !== null) {
+                // Prefer numeric/string ID when available
                 sectionId = String(newsItem.id);
+              } else if (hasValidSlug) {
+                sectionId = newsItem.slug;
               } else if (newsItem._id) {
                 // Fallback to _id if no ID
                 sectionId = String(newsItem._id);
@@ -297,7 +297,7 @@ const EPaperPage2 = ({ page, onSectionClick, epaperId, epaperSlug, isMobile = fa
                 return; // Don't navigate if no identifier
               }
               
-              const epIdentifier = epaperSlug || String(epaperId);
+              const epIdentifier = String(epaperId || epaperSlug || '');
               console.log('Navigating to section:', {
                 sectionId,
                 epIdentifier,

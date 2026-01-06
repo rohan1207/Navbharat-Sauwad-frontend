@@ -145,7 +145,7 @@ const CategoryPage = () => {
             {/* Featured Story */}
             {featuredNews && (
               <article className="mb-8 pb-6 border-b border-subtleGray">
-                <Link to={`/news/${featuredNews.slug || featuredNews._id || featuredNews.id || ''}`} className="block group">
+                <Link to={`/news/${featuredNews._id || featuredNews.id || featuredNews.slug || ''}`} className="block group">
                   <div className="mb-4 rounded-lg overflow-hidden">
                     <img
                       src={featuredNews.featuredImage || featuredNews.image}
@@ -180,7 +180,7 @@ const CategoryPage = () => {
                 {otherNews.map((news) => (
                   <Link
                     key={news.id || news._id}
-                    to={`/news/${news.slug || news._id || news.id || ''}`}
+                    to={`/news/${news._id || news.id || news.slug || ''}`}
                     className="group bg-cleanWhite rounded-lg border border-subtleGray/70 overflow-hidden hover:shadow-md transition-shadow"
                   >
                     <div className="mb-3">
