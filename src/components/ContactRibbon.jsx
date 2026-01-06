@@ -66,7 +66,7 @@ const ContactRibbon = () => {
               {/* Duplicate content for seamless loop */}
               <div className="flex items-center gap-3 flex-shrink-0 px-4">
                 <div className="flex items-center gap-1.5 bg-red-800/80 px-2 py-0.5 rounded border border-red-700/30">
-                  <span className="text-cleanWhite text-xs font-semibold uppercase tracking-wide whitespace-nowrap">
+                  <span className="text-cleanWhite text-sm font-semibold uppercase tracking-wide whitespace-nowrap">
                     संपर्क
                   </span>
                 </div>
@@ -75,10 +75,10 @@ const ContactRibbon = () => {
                   className="flex items-center gap-1 text-cleanWhite hover:text-yellow-200 transition-colors duration-200"
                 >
                   <FaPhone 
-                    className="text-xs transition-transform duration-200" 
+                    className="text-sm transition-transform duration-200" 
                     style={{ transform: 'scaleX(-1)' }}
                   />
-                  <span className="text-xs font-medium whitespace-nowrap">
+                  <span className="text-sm font-medium whitespace-nowrap">
                     <span>मो. नं.: </span>
                     <span className="font-semibold">९१५८५७८००८</span>
                   </span>
@@ -87,8 +87,8 @@ const ContactRibbon = () => {
                   href="mailto:navmanch25@gmail.com"
                   className="flex items-center gap-1 text-cleanWhite hover:text-yellow-200 transition-colors duration-200"
                 >
-                  <FaEnvelope className="text-xs" />
-                  <span className="text-xs font-medium whitespace-nowrap">
+                  <FaEnvelope className="text-sm" />
+                  <span className="text-sm font-medium whitespace-nowrap">
                     <span>ईमेल: </span>
                     <span className="font-semibold">navmanch25@gmail.com</span>
                   </span>
@@ -97,16 +97,16 @@ const ContactRibbon = () => {
                   href="https://wa.me/919158578008"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 bg-green-500/90 hover:bg-green-500 text-cleanWhite px-2 py-0.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap"
+                  className="flex items-center gap-1 bg-green-500/90 hover:bg-green-500 text-cleanWhite px-2 py-0.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap"
                 >
-                  <FaWhatsapp className="text-xs" />
+                  <FaWhatsapp className="text-sm" />
                   <span>WhatsApp</span>
                 </a>
               </div>
               {/* Duplicate for seamless loop */}
               <div className="flex items-center gap-3 flex-shrink-0 px-4">
                 <div className="flex items-center gap-1.5 bg-red-800/80 px-2 py-0.5 rounded border border-red-700/30">
-                  <span className="text-cleanWhite text-xs font-semibold uppercase tracking-wide whitespace-nowrap">
+                  <span className="text-cleanWhite text-sm font-semibold uppercase tracking-wide whitespace-nowrap">
                     संपर्क
                   </span>
                 </div>
@@ -115,10 +115,10 @@ const ContactRibbon = () => {
                   className="flex items-center gap-1 text-cleanWhite hover:text-yellow-200 transition-colors duration-200"
                 >
                   <FaPhone 
-                    className="text-xs transition-transform duration-200" 
+                    className="text-sm transition-transform duration-200" 
                     style={{ transform: 'scaleX(-1)' }}
                   />
-                  <span className="text-xs font-medium whitespace-nowrap">
+                  <span className="text-sm font-medium whitespace-nowrap">
                     <span>मो. नं.: </span>
                     <span className="font-semibold">९१५८५७८००८</span>
                   </span>
@@ -127,8 +127,8 @@ const ContactRibbon = () => {
                   href="mailto:navmanch25@gmail.com"
                   className="flex items-center gap-1 text-cleanWhite hover:text-yellow-200 transition-colors duration-200"
                 >
-                  <FaEnvelope className="text-xs" />
-                  <span className="text-xs font-medium whitespace-nowrap">
+                  <FaEnvelope className="text-sm" />
+                  <span className="text-sm font-medium whitespace-nowrap">
                     <span>ईमेल: </span>
                     <span className="font-semibold">navmanch25@gmail.com</span>
                   </span>
@@ -137,9 +137,9 @@ const ContactRibbon = () => {
                   href="https://wa.me/919158578008"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 bg-green-500/90 hover:bg-green-500 text-cleanWhite px-2 py-0.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap"
+                  className="flex items-center gap-1 bg-green-500/90 hover:bg-green-500 text-cleanWhite px-2 py-0.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap"
                 >
-                  <FaWhatsapp className="text-xs" />
+                  <FaWhatsapp className="text-sm" />
                   <span>WhatsApp</span>
                 </a>
               </div>
