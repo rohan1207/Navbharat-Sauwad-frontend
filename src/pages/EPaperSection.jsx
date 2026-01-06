@@ -850,9 +850,9 @@ const EPaperSection = () => {
                 
                 {/* Date and Page Number - Side by side */}
                 <div className="flex items-center justify-center gap-4 px-4 text-xs md:text-sm text-metaGray">
-                  <span>{formatDateForFooter(epaper.date)}</span>
-                  <span className="font-semibold text-deepCharcoal">•</span>
-                  <span>पृष्ठ {page.pageNo}</span>
+                  <span>Date-{formatDateForFooter(epaper.date)}</span>
+                  <span className="font-semibold text-deepCharcoal"></span>
+                  <span>Page {page.pageNo}</span>
                 </div>
               </div>
             </div>
